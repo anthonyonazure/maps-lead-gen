@@ -34,7 +34,7 @@ Search Google Maps for businesses by type, location, and filters. Export leads t
 ### 2. Install & Run
 
 ```bash
-git clone <this-repo>
+git clone https://github.com/anthonyonazure/maps-lead-gen.git
 cd maps-lead-gen
 npm install
 npm run dev
