@@ -22,6 +22,7 @@ export function SearchForm({ onSearch, loading, hasApiKey }: SearchFormProps) {
   const [hasWebsite, setHasWebsite] = useState<'any' | 'yes' | 'no'>('any');
   const [minReviews, setMinReviews] = useState('');
   const [maxReviews, setMaxReviews] = useState('');
+  const [excludeNames, setExcludeNames] = useState('');
   const [deepSearch, setDeepSearch] = useState(false);
   const [gridSize, setGridSize] = useState(2);
   const [dataSource, setDataSource] = useState<'google' | 'scraper'>('google');
@@ -35,6 +36,7 @@ export function SearchForm({ onSearch, loading, hasApiKey }: SearchFormProps) {
         hasWebsite,
         minReviews: minReviews ? Number(minReviews) : null,
         maxReviews: maxReviews ? Number(maxReviews) : null,
+        excludeNames,
       },
     );
   };
@@ -151,6 +153,17 @@ export function SearchForm({ onSearch, loading, hasApiKey }: SearchFormProps) {
             placeholder="Max"
             min={0}
             className="px-2 py-1 border border-slate-300 rounded-lg text-sm w-20"
+          />
+        </div>
+
+        <div className="flex items-center gap-2">
+          <label className="text-sm text-slate-600">Exclude:</label>
+          <input
+            type="text"
+            value={excludeNames}
+            onChange={e => setExcludeNames(e.target.value)}
+            placeholder="e.g., The Joint, HealthSource"
+            className="px-2 py-1 border border-slate-300 rounded-lg text-sm w-64"
           />
         </div>
       </div>
