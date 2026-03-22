@@ -15,7 +15,7 @@ interface SearchHistoryProps {
 
 const STORAGE_KEY = 'search-history';
 const CACHE_KEY = 'search-cache';
-const MAX_ENTRIES = 10;
+const MAX_ENTRIES = 100;
 
 function cacheKey(query: string, location: string) {
   return `${query.toLowerCase().trim()}|${location.toLowerCase().trim()}`;
@@ -36,11 +36,7 @@ export function addToHistory(query: string, location: string, resultCount: numbe
   try {
     const cache: Record<string, LeadResult[]> = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
     cache[cacheKey(query, location)] = results;
-    // Keep only last 5 cached searches to avoid localStorage limits
-    const keys = Object.keys(cache);
-    if (keys.length > 5) {
-      delete cache[keys[0]];
-    }
+    // No limit — keep all cached searches
     localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
   } catch { /* storage full, skip caching */ }
 }
@@ -64,7 +60,7 @@ export function SearchHistory({ onRerun }: SearchHistoryProps) {
   return (
     <div className="flex items-center gap-2 flex-wrap">
       <History className="h-3.5 w-3.5 text-slate-400" />
-      {history.slice(0, 5).map((entry, i) => (
+      {history.map((entry, i) => (
         <button
           key={i}
           onClick={() => onRerun(entry.query, entry.location)}
