@@ -131,14 +131,140 @@ Your key is saved in your browser — you won't need to enter it again.
 
 ---
 
+## Setup (Windows PC — Step by Step)
+
+No technical experience needed. Follow these steps in order.
+
+### Step 1: Install Node.js
+
+1. Open your web browser and go to **https://nodejs.org**
+2. Click the big green button that says **"LTS"** (the recommended version)
+3. An `.msi` file will download — double-click it to open the installer
+4. Click **Next** through each screen. Leave all the defaults checked
+5. Click **Install**, then **Yes** if Windows asks for permission
+6. Click **Finish** when it's done
+
+**Verify it worked:** Press the `Windows key`, type `cmd`, and press Enter to open Command Prompt. Type:
+```
+node --version
+```
+You should see something like `v22.x.x`. If you see "'node' is not recognized", close Command Prompt, reopen it, and try again.
+
+### Step 2: Install Git
+
+Windows doesn't come with Git, so you need to install it.
+
+1. Go to **https://git-scm.com/download/win**
+2. The download should start automatically. If not, click the link for your system (64-bit)
+3. Run the installer — click **Next** through all the screens (the defaults are fine)
+4. Click **Install**, then **Finish**
+
+### Step 3: Download the App
+
+1. Press the `Windows key`, type `cmd`, and press Enter to open Command Prompt
+2. Copy this entire line, paste it into Command Prompt (right-click to paste), and press Enter:
+
+```
+cd %USERPROFILE%\Desktop && git clone https://github.com/anthonyonazure/maps-lead-gen.git
+```
+
+This creates a folder called `maps-lead-gen` on your Desktop.
+
+### Step 4: Install Dependencies
+
+In the same Command Prompt window, paste this line and press Enter:
+
+```
+cd %USERPROFILE%\Desktop\maps-lead-gen && npm install
+```
+
+Wait about 30-60 seconds. You'll see text scrolling — that's normal. When it stops and you see a new prompt, it's done.
+
+### Step 5: Get a Google API Key (Free)
+
+This is how the app searches Google Maps. Google gives you **$200/month in free credits** — enough for about 6,000 searches. You will not be charged.
+
+**Create a Google Cloud project:**
+
+1. Go to **https://console.cloud.google.com/**
+2. Sign in with your Google account
+3. If asked to agree to terms, check the box and click **Agree and Continue**
+4. Click **Select a project** at the top of the page, then click **New Project**
+5. Name it anything you want (e.g., "Lead Gen") and click **Create**
+6. Wait a few seconds, then click **Select Project** when the notification appears
+
+**Create your API key:**
+
+7. In the left sidebar, click **APIs & Services**, then click **Credentials**
+8. At the top, click **+ Create Credentials**, then click **API key**
+9. A key will appear (it starts with "AIza...") — **copy it** and save it somewhere, you'll need it in Step 7
+10. Click **Close**
+
+**Turn on the required APIs (two links to click):**
+
+11. Open this link in a new tab: **https://console.cloud.google.com/apis/library/places-backend.googleapis.com**
+    - Click the blue **Enable** button
+12. Open this link in a new tab: **https://console.cloud.google.com/apis/library/geocoding-backend.googleapis.com**
+    - Click the blue **Enable** button
+
+Done! The APIs may take a minute to activate.
+
+### Step 6: Start the App
+
+In Command Prompt, paste this line and press Enter:
+
+```
+cd %USERPROFILE%\Desktop\maps-lead-gen && npm run dev
+```
+
+You should see something like:
+```
+[server] Server running on http://127.0.0.1:3001
+[client] Local: http://localhost:5173/
+```
+
+**Leave this Command Prompt window open** — closing it stops the app.
+
+### Step 7: Open the App and Enter Your API Key
+
+1. Open your web browser (Chrome, Edge, Firefox — any works)
+2. Go to **http://localhost:5173**
+3. Click the **gear icon** in the top-right corner
+4. Paste your Google API key (the "AIza..." key from Step 5) into the text field
+5. Click **Save** — it should say "API key valid" in green
+6. Close the settings panel by clicking the X
+
+Your key is saved in your browser — you won't need to enter it again.
+
+### Step 8: Search!
+
+1. **Business Type**: Type what you're looking for (e.g., `chiropractor`, `dentist`, `behavioral health`)
+2. **Location**: Type a city and state (e.g., `Austin, TX`) or a zip code (e.g., `78701`)
+3. **Target Results**: Enter how many results you want (e.g., `200` or `500`). Leave blank for a quick search (up to 60 results)
+4. Set any filters:
+   - **Website**: Choose "No website" to find businesses that don't have one
+   - **Reviews**: Set min/max to find businesses with few reviews (newer/smaller businesses)
+   - **Exclude**: Type business names to skip, separated by commas (e.g., `The Joint, HealthSource`)
+5. Click **Search**
+6. Click any row to expand it and see full details
+7. Use the checkboxes to select specific leads, then click **Export Selected**
+8. Or click **Export All** to download everything as a CSV file you can open in Excel
+
+---
+
 ## Everyday Use
 
-Every time you want to use the app:
-
+**Mac:**
 1. Open **Terminal**
-2. Paste this and press Enter: `cd ~/Desktop/maps-lead-gen && npm run dev`
+2. Paste: `cd ~/Desktop/maps-lead-gen && npm run dev`
 3. Open **http://localhost:5173** in your browser
-4. When you're done, go back to Terminal and press `Ctrl + C` to stop it
+4. When done, press `Ctrl + C` in Terminal to stop
+
+**Windows:**
+1. Open **Command Prompt** (Windows key → type `cmd` → Enter)
+2. Paste: `cd %USERPROFILE%\Desktop\maps-lead-gen && npm run dev`
+3. Open **http://localhost:5173** in your browser
+4. When done, press `Ctrl + C` in Command Prompt to stop
 
 Your previous searches are saved — click any search in the history bar to reload those results instantly (no API cost).
 
