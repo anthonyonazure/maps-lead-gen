@@ -4,6 +4,7 @@ export interface SearchParams {
   radiusMiles?: number;
   deepSearch?: boolean;
   gridSize?: number;
+  targetResults?: number;
   dataSource: 'google' | 'scraper';
   apiKey?: string;
 }

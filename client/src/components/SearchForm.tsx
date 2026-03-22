@@ -9,6 +9,7 @@ interface SearchFormProps {
     radiusMiles: number;
     deepSearch: boolean;
     gridSize: number;
+    targetResults: number | null;
     dataSource: 'google' | 'scraper';
   }, filters: Partial<Filters>) => void;
   loading: boolean;
@@ -23,6 +24,7 @@ export function SearchForm({ onSearch, loading, hasApiKey }: SearchFormProps) {
   const [minReviews, setMinReviews] = useState('');
   const [maxReviews, setMaxReviews] = useState('');
   const [excludeNames, setExcludeNames] = useState('');
+  const [targetResults, setTargetResults] = useState('');
   const [deepSearch, setDeepSearch] = useState(false);
   const [gridSize, setGridSize] = useState(2);
   const [dataSource, setDataSource] = useState<'google' | 'scraper'>('google');
@@ -30,8 +32,9 @@ export function SearchForm({ onSearch, loading, hasApiKey }: SearchFormProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim() || !location.trim()) return;
+    const target = targetResults ? Number(targetResults) : null;
     onSearch(
-      { query: query.trim(), location: location.trim(), radiusMiles, deepSearch, gridSize, dataSource },
+      { query: query.trim(), location: location.trim(), radiusMiles, deepSearch, gridSize, targetResults: target, dataSource },
       {
         hasWebsite,
         minReviews: minReviews ? Number(minReviews) : null,
@@ -43,7 +46,7 @@ export function SearchForm({ onSearch, loading, hasApiKey }: SearchFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-slate-200 p-6 space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Business Type</label>
           <input
@@ -64,6 +67,17 @@ export function SearchForm({ onSearch, loading, hasApiKey }: SearchFormProps) {
             placeholder="e.g., Phoenix, AZ or 85004"
             className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
             required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Target Results</label>
+          <input
+            type="number"
+            value={targetResults}
+            onChange={e => setTargetResults(e.target.value)}
+            placeholder="e.g., 200, 500, 1000 (blank = default 60)"
+            min={1}
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
           />
         </div>
       </div>

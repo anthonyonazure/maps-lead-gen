@@ -36,6 +36,7 @@ export default function App() {
     radiusMiles: number;
     deepSearch: boolean;
     gridSize: number;
+    targetResults: number | null;
     dataSource: 'google' | 'scraper';
   }, preFilters?: Partial<Filters>) => {
     setLoading(true);
@@ -145,7 +146,7 @@ export default function App() {
 
         <SearchForm onSearch={handleSearch} loading={loading} hasApiKey={!!apiKey} />
         <SearchHistory onRerun={(query, location) => {
-          handleSearch({ query, location, radiusMiles: 10, deepSearch: false, gridSize: 2, dataSource: 'google' });
+          handleSearch({ query, location, radiusMiles: 10, deepSearch: false, gridSize: 2, targetResults: null, dataSource: 'google' });
         }} />
 
         {error && (
@@ -160,6 +161,9 @@ export default function App() {
               <div className="text-sm text-slate-600">
                 Showing <span className="font-semibold text-slate-900">{filteredResults.length}</span>
                 {filteredResults.length !== results.length && <> of {results.length}</>} results
+                {meta?.deduplicated ? (
+                  <span className="ml-2 text-slate-400">({meta.deduplicated} dupes removed)</span>
+                ) : null}
                 {meta?.searchDurationMs === 0 && (
                   <span className="ml-2 text-emerald-500 font-medium">(cached — no API cost)</span>
                 )}

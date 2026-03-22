@@ -6,6 +6,7 @@ export async function searchPlaces(params: {
   radiusMiles: number;
   deepSearch: boolean;
   gridSize: number;
+  targetResults?: number | null;
   dataSource: 'google' | 'scraper';
   apiKey?: string;
 }): Promise<SearchResponse> {

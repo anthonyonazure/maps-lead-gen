@@ -19,6 +19,7 @@ export interface SearchParams {
   radiusMiles: number;
   deepSearch: boolean;
   gridSize: number;
+  targetResults: number | null;
   dataSource: 'google' | 'scraper';
 }
 
