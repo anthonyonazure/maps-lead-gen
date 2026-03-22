@@ -1,5 +1,7 @@
 import { History, X } from 'lucide-react';
 
+import type { LeadResult } from '../lib/types';
+
 interface SearchEntry {
   query: string;
   location: string;
@@ -12,7 +14,12 @@ interface SearchHistoryProps {
 }
 
 const STORAGE_KEY = 'search-history';
+const CACHE_KEY = 'search-cache';
 const MAX_ENTRIES = 10;
+
+function cacheKey(query: string, location: string) {
+  return `${query.toLowerCase().trim()}|${location.toLowerCase().trim()}`;
+}
 
 export function getHistory(): SearchEntry[] {
   try {
@@ -20,10 +27,29 @@ export function getHistory(): SearchEntry[] {
   } catch { return []; }
 }
 
-export function addToHistory(query: string, location: string, resultCount: number) {
+export function addToHistory(query: string, location: string, resultCount: number, results: LeadResult[]) {
   const history = getHistory().filter(e => !(e.query === query && e.location === location));
   history.unshift({ query, location, timestamp: Date.now(), resultCount });
   localStorage.setItem(STORAGE_KEY, JSON.stringify(history.slice(0, MAX_ENTRIES)));
+
+  // Cache results
+  try {
+    const cache: Record<string, LeadResult[]> = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
+    cache[cacheKey(query, location)] = results;
+    // Keep only last 5 cached searches to avoid localStorage limits
+    const keys = Object.keys(cache);
+    if (keys.length > 5) {
+      delete cache[keys[0]];
+    }
+    localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+  } catch { /* storage full, skip caching */ }
+}
+
+export function getCachedResults(query: string, location: string): LeadResult[] | null {
+  try {
+    const cache = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
+    return cache[cacheKey(query, location)] || null;
+  } catch { return null; }
 }
 
 export function SearchHistory({ onRerun }: SearchHistoryProps) {

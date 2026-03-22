@@ -4,7 +4,7 @@ import { ResultsTable } from './components/ResultsTable';
 import { FilterBar } from './components/FilterBar';
 import { SettingsPanel } from './components/SettingsPanel';
 import { CostTracker } from './components/CostTracker';
-import { SearchHistory, addToHistory } from './components/SearchHistory';
+import { SearchHistory, addToHistory, getCachedResults } from './components/SearchHistory';
 import { MapPin, Settings, Download } from 'lucide-react';
 import type { LeadResult, Filters, SearchResponse } from './lib/types';
 import { DEFAULT_FILTERS } from './lib/types';
@@ -47,6 +47,15 @@ export default function App() {
     setPage(0);
 
     try {
+      // Check cache first to avoid paying for duplicate searches
+      const cached = getCachedResults(params.query, params.location);
+      if (cached) {
+        setResults(cached);
+        setMeta({ totalFound: cached.length, deduplicated: 0, dataSource: params.dataSource, searchDurationMs: 0 });
+        setLoading(false);
+        return;
+      }
+
       const response = await searchPlaces({
         ...params,
         apiKey: params.dataSource === 'google' ? apiKey : undefined,
@@ -54,7 +63,7 @@ export default function App() {
       setResults(response.results);
       setMeta(response.meta);
       setSearchCount(c => c + 1);
-      addToHistory(params.query, params.location, response.results.length);
+      addToHistory(params.query, params.location, response.results.length, response.results);
       if (response.meta.apiCost) {
         setSessionCost(c => c + response.meta.apiCost!);
       }
@@ -151,7 +160,10 @@ export default function App() {
               <div className="text-sm text-slate-600">
                 Showing <span className="font-semibold text-slate-900">{filteredResults.length}</span>
                 {filteredResults.length !== results.length && <> of {results.length}</>} results
-                {meta?.searchDurationMs && (
+                {meta?.searchDurationMs === 0 && (
+                  <span className="ml-2 text-emerald-500 font-medium">(cached — no API cost)</span>
+                )}
+                {meta?.searchDurationMs !== undefined && meta.searchDurationMs > 0 && (
                   <span className="ml-2 text-slate-400">in {(meta.searchDurationMs / 1000).toFixed(1)}s</span>
                 )}
               </div>
