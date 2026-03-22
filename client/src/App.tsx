@@ -3,6 +3,7 @@ import { SearchForm } from './components/SearchForm';
 import { ResultsTable } from './components/ResultsTable';
 import { FilterBar } from './components/FilterBar';
 import { SettingsPanel } from './components/SettingsPanel';
+import { CostTracker } from './components/CostTracker';
 import { MapPin, Settings, Download } from 'lucide-react';
 import type { LeadResult, Filters, SearchResponse } from './lib/types';
 import { DEFAULT_FILTERS } from './lib/types';
@@ -20,6 +21,8 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
+  const [sessionCost, setSessionCost] = useState(0);
+  const [searchCount, setSearchCount] = useState(0);
 
   const apiKey = localStorage.getItem('gmaps-api-key') || '';
 
@@ -44,6 +47,10 @@ export default function App() {
       });
       setResults(response.results);
       setMeta(response.meta);
+      setSearchCount(c => c + 1);
+      if (response.meta.apiCost) {
+        setSessionCost(c => c + response.meta.apiCost!);
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -101,12 +108,15 @@ export default function App() {
             <MapPin className="h-6 w-6 text-blue-600" />
             <h1 className="text-xl font-bold text-slate-900">Maps Lead Gen</h1>
           </div>
-          <button
-            onClick={() => setShowSettings(!showSettings)}
-            className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
-          >
-            <Settings className="h-5 w-5 text-slate-600" />
-          </button>
+          <div className="flex items-center gap-3">
+            <CostTracker sessionCost={sessionCost} searchCount={searchCount} lastSearchCost={meta?.apiCost} />
+            <button
+              onClick={() => setShowSettings(!showSettings)}
+              className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
+            >
+              <Settings className="h-5 w-5 text-slate-600" />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -127,9 +137,6 @@ export default function App() {
               <div className="text-sm text-slate-600">
                 Showing <span className="font-semibold text-slate-900">{filteredResults.length}</span>
                 {filteredResults.length !== results.length && <> of {results.length}</>} results
-                {meta?.apiCost !== undefined && (
-                  <span className="ml-2 text-slate-400">(~${meta.apiCost.toFixed(3)})</span>
-                )}
                 {meta?.searchDurationMs && (
                   <span className="ml-2 text-slate-400">in {(meta.searchDurationMs / 1000).toFixed(1)}s</span>
                 )}
