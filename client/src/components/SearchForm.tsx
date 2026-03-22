@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Search, Zap } from 'lucide-react';
+import type { Filters } from '../lib/types';
 
 interface SearchFormProps {
   onSearch: (params: {
@@ -9,7 +10,7 @@ interface SearchFormProps {
     deepSearch: boolean;
     gridSize: number;
     dataSource: 'google' | 'scraper';
-  }) => void;
+  }, filters: Partial<Filters>) => void;
   loading: boolean;
   hasApiKey: boolean;
 }
@@ -18,6 +19,9 @@ export function SearchForm({ onSearch, loading, hasApiKey }: SearchFormProps) {
   const [query, setQuery] = useState('');
   const [location, setLocation] = useState('');
   const [radiusMiles, setRadiusMiles] = useState(10);
+  const [hasWebsite, setHasWebsite] = useState<'any' | 'yes' | 'no'>('any');
+  const [minReviews, setMinReviews] = useState('');
+  const [maxReviews, setMaxReviews] = useState('');
   const [deepSearch, setDeepSearch] = useState(false);
   const [gridSize, setGridSize] = useState(2);
   const [dataSource, setDataSource] = useState<'google' | 'scraper'>('google');
@@ -25,7 +29,14 @@ export function SearchForm({ onSearch, loading, hasApiKey }: SearchFormProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim() || !location.trim()) return;
-    onSearch({ query: query.trim(), location: location.trim(), radiusMiles, deepSearch, gridSize, dataSource });
+    onSearch(
+      { query: query.trim(), location: location.trim(), radiusMiles, deepSearch, gridSize, dataSource },
+      {
+        hasWebsite,
+        minReviews: minReviews ? Number(minReviews) : null,
+        maxReviews: maxReviews ? Number(maxReviews) : null,
+      },
+    );
   };
 
   return (
@@ -106,6 +117,42 @@ export function SearchForm({ onSearch, loading, hasApiKey }: SearchFormProps) {
             </select>
           </div>
         )}
+      </div>
+
+      <div className="flex items-center gap-6 flex-wrap">
+        <div className="flex items-center gap-2">
+          <label className="text-sm text-slate-600">Website:</label>
+          <select
+            value={hasWebsite}
+            onChange={e => setHasWebsite(e.target.value as 'any' | 'yes' | 'no')}
+            className="px-2 py-1 border border-slate-300 rounded-lg text-sm"
+          >
+            <option value="any">Any</option>
+            <option value="yes">Has website</option>
+            <option value="no">No website</option>
+          </select>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <label className="text-sm text-slate-600">Reviews:</label>
+          <input
+            type="number"
+            value={minReviews}
+            onChange={e => setMinReviews(e.target.value)}
+            placeholder="Min"
+            min={0}
+            className="px-2 py-1 border border-slate-300 rounded-lg text-sm w-20"
+          />
+          <span className="text-slate-400">—</span>
+          <input
+            type="number"
+            value={maxReviews}
+            onChange={e => setMaxReviews(e.target.value)}
+            placeholder="Max"
+            min={0}
+            className="px-2 py-1 border border-slate-300 rounded-lg text-sm w-20"
+          />
+        </div>
       </div>
 
       {dataSource === 'google' && !hasApiKey && (

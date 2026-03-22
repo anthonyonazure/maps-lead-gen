@@ -4,6 +4,7 @@ import { ResultsTable } from './components/ResultsTable';
 import { FilterBar } from './components/FilterBar';
 import { SettingsPanel } from './components/SettingsPanel';
 import { CostTracker } from './components/CostTracker';
+import { SearchHistory, addToHistory } from './components/SearchHistory';
 import { MapPin, Settings, Download } from 'lucide-react';
 import type { LeadResult, Filters, SearchResponse } from './lib/types';
 import { DEFAULT_FILTERS } from './lib/types';
@@ -23,6 +24,9 @@ export default function App() {
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [sessionCost, setSessionCost] = useState(0);
   const [searchCount, setSearchCount] = useState(0);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [page, setPage] = useState(0);
+  const pageSize = 25;
 
   const apiKey = localStorage.getItem('gmaps-api-key') || '';
 
@@ -33,12 +37,14 @@ export default function App() {
     deepSearch: boolean;
     gridSize: number;
     dataSource: 'google' | 'scraper';
-  }) => {
+  }, preFilters?: Partial<Filters>) => {
     setLoading(true);
     setError(null);
     setResults([]);
     setMeta(null);
-    setFilters(DEFAULT_FILTERS);
+    setFilters({ ...DEFAULT_FILTERS, ...preFilters });
+    setSelectedIds(new Set());
+    setPage(0);
 
     try {
       const response = await searchPlaces({
@@ -48,6 +54,7 @@ export default function App() {
       setResults(response.results);
       setMeta(response.meta);
       setSearchCount(c => c + 1);
+      addToHistory(params.query, params.location, response.results.length);
       if (response.meta.apiCost) {
         setSessionCost(c => c + response.meta.apiCost!);
       }
@@ -72,6 +79,10 @@ export default function App() {
     if (filters.categoryFilter) {
       const term = filters.categoryFilter.toLowerCase();
       filtered = filtered.filter(r => r.categories.some(c => c.toLowerCase().includes(term)));
+    }
+    if (filters.excludeNames) {
+      const excluded = filters.excludeNames.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+      filtered = filtered.filter(r => !excluded.some(ex => r.name.toLowerCase().includes(ex)));
     }
 
     filtered = [...filtered].sort((a, b) => {
@@ -124,6 +135,9 @@ export default function App() {
         {showSettings && <SettingsPanel onClose={() => setShowSettings(false)} />}
 
         <SearchForm onSearch={handleSearch} loading={loading} hasApiKey={!!apiKey} />
+        <SearchHistory onRerun={(query, location) => {
+          handleSearch({ query, location, radiusMiles: 10, deepSearch: false, gridSize: 2, dataSource: 'google' });
+        }} />
 
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
@@ -141,17 +155,38 @@ export default function App() {
                   <span className="ml-2 text-slate-400">in {(meta.searchDurationMs / 1000).toFixed(1)}s</span>
                 )}
               </div>
-              <button
-                onClick={() => exportCSV(filteredResults)}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
-              >
-                <Download className="h-4 w-4" />
-                Export CSV ({filteredResults.length})
-              </button>
+              <div className="flex items-center gap-2">
+                {selectedIds.size > 0 && (
+                  <button
+                    onClick={() => exportCSV(filteredResults.filter(r => selectedIds.has(r.placeId)))}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    <Download className="h-4 w-4" />
+                    Export Selected ({selectedIds.size})
+                  </button>
+                )}
+                <button
+                  onClick={() => exportCSV(filteredResults)}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  <Download className="h-4 w-4" />
+                  Export All ({filteredResults.length})
+                </button>
+              </div>
             </div>
 
-            <FilterBar filters={filters} onChange={setFilters} />
-            <ResultsTable results={filteredResults} sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+            <FilterBar filters={filters} onChange={(f) => { setFilters(f); setPage(0); }} />
+            <ResultsTable
+              results={filteredResults}
+              sortField={sortField}
+              sortDir={sortDir}
+              onSort={handleSort}
+              selectedIds={selectedIds}
+              onSelectionChange={setSelectedIds}
+              page={page}
+              pageSize={pageSize}
+              onPageChange={setPage}
+            />
           </>
         )}
 

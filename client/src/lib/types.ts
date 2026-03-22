@@ -50,6 +50,7 @@ export interface Filters {
   minRating: number | null;
   maxRating: number | null;
   categoryFilter: string;
+  excludeNames: string;
 }
 
 export const DEFAULT_FILTERS: Filters = {
@@ -60,4 +61,5 @@ export const DEFAULT_FILTERS: Filters = {
   minRating: null,
   maxRating: null,
   categoryFilter: '',
+  excludeNames: '',
 };

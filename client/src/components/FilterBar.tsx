@@ -78,6 +78,16 @@ export function FilterBar({ filters, onChange }: FilterBarProps) {
             className="px-2 py-1 border border-slate-300 rounded text-sm w-28"
           />
         </div>
+        <div>
+          <label className="block text-xs text-slate-500 mb-1">Exclude names</label>
+          <input
+            type="text"
+            value={filters.excludeNames}
+            onChange={e => onChange({ ...filters, excludeNames: e.target.value })}
+            placeholder="e.g., The Joint, HealthSource"
+            className="px-2 py-1 border border-slate-300 rounded text-sm w-56"
+          />
+        </div>
       </div>
     </div>
   );
