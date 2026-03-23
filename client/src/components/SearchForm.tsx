@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Search, Zap } from 'lucide-react';
 import { BusinessTypeInput } from './BusinessTypeInput';
+import { LocationInput } from './LocationInput';
 import type { Filters } from '../lib/types';
 
 interface SearchFormProps {
@@ -19,7 +20,7 @@ interface SearchFormProps {
 
 export function SearchForm({ onSearch, loading, hasApiKey }: SearchFormProps) {
   const [queryTypes, setQueryTypes] = useState<string[]>([]);
-  const [location, setLocation] = useState('');
+  const [locations, setLocations] = useState<string[]>([]);
   const [radiusMiles, setRadiusMiles] = useState(10);
   const [hasWebsite, setHasWebsite] = useState<'any' | 'yes' | 'no'>('any');
   const [minReviews, setMinReviews] = useState('');
@@ -32,12 +33,13 @@ export function SearchForm({ onSearch, loading, hasApiKey }: SearchFormProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (queryTypes.length === 0 || !location.trim()) return;
+    if (queryTypes.length === 0 || locations.length === 0) return;
     const target = targetResults ? Number(targetResults) : null;
-    // Join multiple types into one query string
     const query = queryTypes.join(', ');
+    // Join multiple locations — server will split and search each
+    const location = locations.join('|');
     onSearch(
-      { query, location: location.trim(), radiusMiles, deepSearch, gridSize, targetResults: target, dataSource },
+      { query, location, radiusMiles, deepSearch, gridSize, targetResults: target, dataSource },
       {
         hasWebsite,
         minReviews: minReviews ? Number(minReviews) : null,
@@ -55,15 +57,8 @@ export function SearchForm({ onSearch, loading, hasApiKey }: SearchFormProps) {
           <BusinessTypeInput values={queryTypes} onChange={setQueryTypes} />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Location</label>
-          <input
-            type="text"
-            value={location}
-            onChange={e => setLocation(e.target.value)}
-            placeholder="e.g., Phoenix, AZ or 85004"
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-            required
-          />
+          <label className="block text-sm font-medium text-slate-700 mb-1">Locations</label>
+          <LocationInput values={locations} onChange={setLocations} />
         </div>
       </div>
 

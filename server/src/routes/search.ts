@@ -4,60 +4,70 @@ import { splitIntoGrid } from '../services/grid-splitter.js';
 import { searchGooglePlaces } from '../providers/google-places.js';
 import { searchWithScraper } from '../providers/gosom-scraper.js';
 import { searchSerpApi } from '../providers/serpapi.js';
-import type { SearchParams, SearchResponse, SearchCircle } from '../providers/types.js';
+import type { SearchParams, SearchResponse, SearchCircle, LeadResult } from '../providers/types.js';
 
 export const searchRouter = Router();
 
-const RESULTS_PER_CELL = 60; // Google returns max 60 per query (3 pages x 20)
+const RESULTS_PER_CELL = 60;
 const COST_PER_REQUEST = 0.032;
 
-/**
- * Given a target result count, calculate the grid size needed.
- * Each grid cell yields up to 60 results. Account for ~30% overlap/dedup.
- */
 function calculateGridSize(targetResults: number): number {
   if (targetResults <= 60) return 1;
-  // Assume ~30% overlap between adjacent cells, so effective yield is ~42 per cell
   const effectivePerCell = RESULTS_PER_CELL * 0.7;
   const cellsNeeded = Math.ceil(targetResults / effectivePerCell);
-  // Grid is NxN, find smallest N where N*N >= cellsNeeded
   const gridSize = Math.ceil(Math.sqrt(cellsNeeded));
-  return Math.min(gridSize, 10); // Cap at 10x10 = 100 cells
+  return Math.min(gridSize, 10);
 }
 
-// POST /api/search/estimate — get cost before executing
+function dedupeResults(results: LeadResult[]): LeadResult[] {
+  const seen = new Set<string>();
+  return results.filter(r => {
+    if (seen.has(r.placeId)) return false;
+    seen.add(r.placeId);
+    return true;
+  });
+}
+
+/** Split pipe-separated location string into individual locations */
+function parseLocations(location: string): string[] {
+  return location.split('|').map(l => l.trim()).filter(Boolean);
+}
+
+// POST /api/search/estimate
 searchRouter.post('/estimate', async (req: Request, res: Response) => {
   try {
-    const { targetResults, deepSearch, gridSize } = req.body as Partial<SearchParams>;
+    const { targetResults, deepSearch, gridSize, location } = req.body as Partial<SearchParams>;
+    const locationCount = location ? parseLocations(location).length : 1;
 
-    let cells: number;
+    let cellsPerLocation: number;
     if (targetResults && targetResults > 60) {
       const auto = calculateGridSize(targetResults);
-      cells = auto * auto;
+      cellsPerLocation = auto * auto;
     } else if (deepSearch) {
       const g = gridSize ?? 2;
-      cells = g * g;
+      cellsPerLocation = g * g;
     } else {
-      cells = 1;
+      cellsPerLocation = 1;
     }
 
-    const maxPages = 3;
-    const requests = cells * maxPages;
+    const totalCells = cellsPerLocation * locationCount;
+    const requests = totalCells * 3;
     res.json({
       requests,
       costPerRequest: COST_PER_REQUEST,
       totalCost: Math.round(requests * COST_PER_REQUEST * 1000) / 1000,
-      gridCells: cells,
-      gridSize: Math.ceil(Math.sqrt(cells)),
-      pagesPerCell: maxPages,
-      estimatedResults: Math.round(cells * RESULTS_PER_CELL * 0.7),
+      gridCells: totalCells,
+      gridSize: Math.ceil(Math.sqrt(cellsPerLocation)),
+      locations: locationCount,
+      pagesPerCell: 3,
+      estimatedResults: Math.round(totalCells * RESULTS_PER_CELL * 0.7),
     });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// POST /api/search — execute search
+// POST /api/search
 searchRouter.post('/', async (req: Request, res: Response) => {
   const start = Date.now();
 
@@ -69,39 +79,36 @@ searchRouter.post('/', async (req: Request, res: Response) => {
       return;
     }
 
+    const locations = parseLocations(params.location);
+
     if (params.dataSource === 'scraper') {
-      const results = await searchWithScraper(params.query, params.location);
-      const response: SearchResponse = {
-        results,
-        meta: {
-          totalFound: results.length,
-          deduplicated: 0,
-          dataSource: 'scraper',
-          searchDurationMs: Date.now() - start,
-        },
-      };
-      res.json(response);
+      const allResults: LeadResult[] = [];
+      for (const loc of locations) {
+        const results = await searchWithScraper(params.query, loc);
+        allResults.push(...results);
+      }
+      const deduped = dedupeResults(allResults);
+      res.json({
+        results: deduped,
+        meta: { totalFound: deduped.length, deduplicated: allResults.length - deduped.length, dataSource: 'scraper', searchDurationMs: Date.now() - start },
+      } as SearchResponse);
       return;
     }
 
     if (params.dataSource === 'serpapi') {
-      if (!params.serpApiKey) {
-        res.status(400).json({ error: 'SerpAPI key is required' });
-        return;
+      if (!params.serpApiKey) { res.status(400).json({ error: 'SerpAPI key is required' }); return; }
+      const allResults: LeadResult[] = [];
+      const maxPerLocation = Math.ceil((params.targetResults || 60) / locations.length);
+      for (const loc of locations) {
+        const geo = await geocodeLocation(loc, params.apiKey || params.serpApiKey);
+        const results = await searchSerpApi(params.query, geo.location, params.serpApiKey, maxPerLocation);
+        allResults.push(...results);
       }
-      const geo = await geocodeLocation(params.location, params.apiKey || params.serpApiKey);
-      const maxResults = params.targetResults || 60;
-      const results = await searchSerpApi(params.query, geo.location, params.serpApiKey, maxResults);
-      const response: SearchResponse = {
-        results,
-        meta: {
-          totalFound: results.length,
-          deduplicated: 0,
-          dataSource: 'serpapi',
-          searchDurationMs: Date.now() - start,
-        },
-      };
-      res.json(response);
+      const deduped = dedupeResults(allResults);
+      res.json({
+        results: deduped,
+        meta: { totalFound: deduped.length, deduplicated: allResults.length - deduped.length, dataSource: 'serpapi', searchDurationMs: Date.now() - start },
+      } as SearchResponse);
       return;
     }
 
@@ -111,46 +118,51 @@ searchRouter.post('/', async (req: Request, res: Response) => {
       return;
     }
 
-    const geo = await geocodeLocation(params.location, params.apiKey);
     const radiusMiles = params.radiusMiles ?? 10;
     const radiusMeters = Math.min(radiusMiles * 1609.34, 50_000);
 
-    // Smart grid calculation
     let gridSize: number;
     if (params.targetResults && params.targetResults > 60) {
-      gridSize = calculateGridSize(params.targetResults);
+      gridSize = calculateGridSize(Math.ceil(params.targetResults / locations.length));
     } else if (params.deepSearch) {
       gridSize = params.gridSize ?? 2;
     } else {
       gridSize = 1;
     }
 
-    let circles: SearchCircle[];
-    if (gridSize > 1) {
-      circles = splitIntoGrid(geo.bounds, gridSize);
-    } else {
-      circles = [{ lat: geo.location.lat, lng: geo.location.lng, radiusMeters }];
+    const allResults: LeadResult[] = [];
+    let totalCircles = 0;
+
+    for (const loc of locations) {
+      const geo = await geocodeLocation(loc, params.apiKey);
+
+      let circles: SearchCircle[];
+      if (gridSize > 1) {
+        circles = splitIntoGrid(geo.bounds, gridSize);
+      } else {
+        circles = [{ lat: geo.location.lat, lng: geo.location.lng, radiusMeters }];
+      }
+      totalCircles += circles.length;
+
+      const results = await searchGooglePlaces(params.query, circles, params.apiKey);
+      allResults.push(...results);
     }
 
-    const totalRawBefore = circles.length * RESULTS_PER_CELL; // theoretical max
-    const rawResults = await searchGooglePlaces(params.query, circles, params.apiKey);
-    const deduplicated = (circles.length * RESULTS_PER_CELL) - rawResults.length;
-
-    const requests = circles.length * 3; // 3 pages per cell max
+    const deduped = dedupeResults(allResults);
+    const requests = totalCircles * 3;
     const apiCost = Math.round(requests * COST_PER_REQUEST * 1000) / 1000;
 
-    const response: SearchResponse = {
-      results: rawResults,
+    res.json({
+      results: deduped,
       meta: {
-        totalFound: rawResults.length,
-        deduplicated: Math.max(0, deduplicated),
+        totalFound: deduped.length,
+        deduplicated: allResults.length - deduped.length,
         dataSource: 'google',
         apiCost,
         searchDurationMs: Date.now() - start,
-        gridCells: circles.length,
+        gridCells: totalCircles,
       },
-    };
-    res.json(response);
+    } as SearchResponse);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
