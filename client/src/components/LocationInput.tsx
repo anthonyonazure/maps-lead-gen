@@ -53,6 +53,12 @@ export function LocationInput({ values, onChange }: LocationInputProps) {
   }, []);
 
   function addValue(val: string) {
+    // Auto-detect state names and expand to cities
+    const matchedState = US_STATES.find(s => s.toLowerCase() === val.toLowerCase());
+    if (matchedState) {
+      addState(matchedState);
+      return;
+    }
     if (!values.some(v => v.toLowerCase() === val.toLowerCase())) {
       onChange([...values, val]);
     }
@@ -93,7 +99,13 @@ export function LocationInput({ values, onChange }: LocationInputProps) {
           addValue(s.label);
         }
       } else if (input.trim()) {
-        addValue(input.trim());
+        // Check if it's a state name (case-insensitive)
+        const matchedState = US_STATES.find(s => s.toLowerCase() === input.trim().toLowerCase());
+        if (matchedState) {
+          addState(matchedState);
+        } else {
+          addValue(input.trim());
+        }
       }
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
