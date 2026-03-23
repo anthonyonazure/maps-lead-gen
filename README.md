@@ -1,272 +1,176 @@
 # Maps Lead Gen
 
-Search Google Maps for businesses by type, location, and filters. Export leads to CSV.
+Find, score, and manage business leads from Google Maps. Search by type and location, filter by website presence, review count, and rating, enrich with email addresses and website quality analysis, score leads with AI, generate outreach messages, and export to CSV.
 
 ## What It Does
 
-- Search by business type (chiropractor, dentist, etc.) and location (city/state or zip)
-- Set a target result count (e.g., 500 or 1000) — the app automatically runs enough searches to hit it
-- Filter results by: website (has/doesn't have), review count, rating, phone, category
-- Exclude businesses by name (comma-separated)
-- Sort by any column, expand rows for full details
-- Select specific rows or export all to CSV
-- Results are cached locally — re-running a search is free (no duplicate API charges)
-- Cost tracker shows how much you've spent per session
+- **Search** Google Maps by business type and location (city/state or zip code)
+- **Set a target** result count (200, 500, 1000+) — auto-calculates grid coverage to hit your number
+- **3 data sources**: Google Places API, SerpAPI, or free Docker-based scraper
+- **Filter** by: website (has/doesn't have), phone, review count, rating, category, exclude names
+- **Score leads** with customizable rule-based scoring + optional AI enhancement (OpenAI, Claude, Gemini)
+- **Check websites** for SSL, mobile-friendliness, load speed, platform (WordPress/Wix/etc.), booking page
+- **Find emails** via Hunter.io integration
+- **Manage leads** with a built-in pipeline: New → Contacted → Replied → Meeting → Won/Lost + notes
+- **Generate outreach** from customizable templates that auto-fill business name, gaps, and details
+- **Choose export columns** — pick exactly which fields go into your CSV
+- **Cache results** — re-running a search costs nothing (cached in your browser)
+- **Track costs** — real-time session spend tracker in the header
 
 ---
 
-## Setup (Mac — Step by Step)
+## Setup (Mac)
 
-No technical experience needed. Follow these steps in order.
+No technical experience needed.
 
 ### Step 1: Install Node.js
 
-Node.js is the engine that runs this app. You only need to do this once.
+1. Go to **https://nodejs.org** and click the green **LTS** button
+2. Open the downloaded `.pkg` file and follow the installer
+3. Verify: open **Terminal** (`Cmd + Space` → type `Terminal`) and run `node --version`
 
-1. Open your web browser and go to **https://nodejs.org**
-2. Click the big green button that says **"LTS"** (the recommended version)
-3. A `.pkg` file will download — double-click it to open the installer
-4. Click **Continue** through each screen, then click **Install**
-5. Enter your Mac password when asked
-6. Click **Close** when it finishes
-
-**Verify it worked:** Open the **Terminal** app (press `Cmd + Space`, type `Terminal`, press Enter) and type:
-```
-node --version
-```
-You should see something like `v22.x.x`. If you see "command not found", close Terminal, reopen it, and try again.
-
-### Step 2: Download the App
-
-1. Open **Terminal** (if it's not already open: `Cmd + Space` → type `Terminal` → press Enter)
-2. Copy this entire line, paste it into Terminal, and press Enter:
+### Step 2: Download & Install
 
 ```
 cd ~/Desktop && git clone https://github.com/anthonyonazure/maps-lead-gen.git
-```
-
-This creates a folder called `maps-lead-gen` on your Desktop.
-
-> **If you see "git: command not found":** A popup will appear asking to install Command Line Tools. Click **Install**, wait for it to finish, then paste the command above again.
-
-### Step 3: Install Dependencies
-
-In the same Terminal window, paste this line and press Enter:
-
-```
 cd ~/Desktop/maps-lead-gen && npm install
 ```
 
-Wait about 30-60 seconds. You'll see text scrolling — that's normal. When it stops and shows a new prompt line, it's done.
+> If you see "git: command not found", click **Install** when the popup appears, then try again.
 
-### Step 4: Get a Google API Key (Free)
+### Step 3: Get a Google API Key (Free)
 
-This is how the app searches Google Maps. Google gives you **$200/month in free credits** — enough for about 6,000 searches. You will not be charged.
+Google gives you **$200/month in free credits** — enough for ~6,000 searches.
 
-**Create a Google Cloud project:**
+1. Go to **https://console.cloud.google.com/** and sign in
+2. Create a new project (name it anything)
+3. Go to **APIs & Services → Credentials → + Create Credentials → API key**
+4. Copy the key (starts with "AIza...")
+5. Enable these two APIs:
+   - **https://console.cloud.google.com/apis/library/places-backend.googleapis.com**
+   - **https://console.cloud.google.com/apis/library/geocoding-backend.googleapis.com**
 
-1. Go to **https://console.cloud.google.com/**
-2. Sign in with your Google account
-3. If asked to agree to terms, check the box and click **Agree and Continue**
-4. Click **Select a project** at the top of the page, then click **New Project**
-5. Name it anything you want (e.g., "Lead Gen") and click **Create**
-6. Wait a few seconds, then click **Select Project** when the notification appears
-
-**Create your API key:**
-
-7. In the left sidebar, click **APIs & Services**, then click **Credentials**
-8. At the top, click **+ Create Credentials**, then click **API key**
-9. A key will appear (it starts with "AIza...") — **copy it** and save it somewhere, you'll need it in Step 6
-10. Click **Close**
-
-**Turn on the required APIs (two links to click):**
-
-11. Open this link in a new tab: **https://console.cloud.google.com/apis/library/places-backend.googleapis.com**
-    - Click the blue **Enable** button
-12. Open this link in a new tab: **https://console.cloud.google.com/apis/library/geocoding-backend.googleapis.com**
-    - Click the blue **Enable** button
-
-Done! The APIs may take a minute to activate.
-
-### Step 5: Start the App
-
-In Terminal, paste this line and press Enter:
+### Step 4: Start & Configure
 
 ```
 cd ~/Desktop/maps-lead-gen && npm run dev
 ```
 
-You should see something like:
-```
-[server] Server running on http://127.0.0.1:3001
-[client] Local: http://localhost:5173/
-```
-
-**Leave this Terminal window open** — closing it stops the app.
-
-### Step 6: Open the App and Enter Your API Key
-
-1. Open your web browser (Chrome, Safari, Firefox — any works)
-2. Go to **http://localhost:5173**
-3. Click the **gear icon** in the top-right corner
-4. Paste your Google API key (the "AIza..." key from Step 4) into the text field
-5. Click **Save** — it should say "API key valid" in green
-6. Close the settings panel by clicking the X
-
-Your key is saved in your browser — you won't need to enter it again.
-
-### Step 7: Search!
-
-1. **Business Type**: Type what you're looking for (e.g., `chiropractor`, `dentist`, `behavioral health`)
-2. **Location**: Type a city and state (e.g., `Austin, TX`) or a zip code (e.g., `78701`)
-3. **Target Results**: Enter how many results you want (e.g., `200` or `500`). Leave blank for a quick search (up to 60 results)
-4. Set any filters:
-   - **Website**: Choose "No website" to find businesses that don't have one
-   - **Reviews**: Set min/max to find businesses with few reviews (newer/smaller businesses)
-   - **Exclude**: Type business names to skip, separated by commas (e.g., `The Joint, HealthSource`)
-5. Click **Search**
-6. Click any row to expand it and see full details
-7. Use the checkboxes to select specific leads, then click **Export Selected**
-8. Or click **Export All** to download everything as a CSV file you can open in Excel
+Open **http://localhost:5173**, click the **gear icon**, paste your API key, click **Save**.
 
 ---
 
-## Setup (Windows PC — Step by Step)
-
-No technical experience needed. Follow these steps in order.
+## Setup (Windows)
 
 ### Step 1: Install Node.js
 
-1. Open your web browser and go to **https://nodejs.org**
-2. Click the big green button that says **"LTS"** (the recommended version)
-3. An `.msi` file will download — double-click it to open the installer
-4. Click **Next** through each screen. Leave all the defaults checked
-5. Click **Install**, then **Yes** if Windows asks for permission
-6. Click **Finish** when it's done
-
-**Verify it worked:** Press the `Windows key`, type `cmd`, and press Enter to open Command Prompt. Type:
-```
-node --version
-```
-You should see something like `v22.x.x`. If you see "'node' is not recognized", close Command Prompt, reopen it, and try again.
+1. Go to **https://nodejs.org** and click the green **LTS** button
+2. Run the `.msi` installer (click Next through everything)
+3. Verify: open **Command Prompt** (Windows key → type `cmd`) and run `node --version`
 
 ### Step 2: Install Git
 
-Windows doesn't come with Git, so you need to install it.
+1. Go to **https://git-scm.com/download/win** and run the installer (defaults are fine)
 
-1. Go to **https://git-scm.com/download/win**
-2. The download should start automatically. If not, click the link for your system (64-bit)
-3. Run the installer — click **Next** through all the screens (the defaults are fine)
-4. Click **Install**, then **Finish**
-
-### Step 3: Download the App
-
-1. Press the `Windows key`, type `cmd`, and press Enter to open Command Prompt
-2. Copy this entire line, paste it into Command Prompt (right-click to paste), and press Enter:
+### Step 3: Download & Install
 
 ```
 cd %USERPROFILE%\Desktop && git clone https://github.com/anthonyonazure/maps-lead-gen.git
-```
-
-This creates a folder called `maps-lead-gen` on your Desktop.
-
-### Step 4: Install Dependencies
-
-In the same Command Prompt window, paste this line and press Enter:
-
-```
 cd %USERPROFILE%\Desktop\maps-lead-gen && npm install
 ```
 
-Wait about 30-60 seconds. You'll see text scrolling — that's normal. When it stops and you see a new prompt, it's done.
+### Step 4: Get a Google API Key
 
-### Step 5: Get a Google API Key (Free)
+Same as Mac Step 3 above.
 
-This is how the app searches Google Maps. Google gives you **$200/month in free credits** — enough for about 6,000 searches. You will not be charged.
-
-**Create a Google Cloud project:**
-
-1. Go to **https://console.cloud.google.com/**
-2. Sign in with your Google account
-3. If asked to agree to terms, check the box and click **Agree and Continue**
-4. Click **Select a project** at the top of the page, then click **New Project**
-5. Name it anything you want (e.g., "Lead Gen") and click **Create**
-6. Wait a few seconds, then click **Select Project** when the notification appears
-
-**Create your API key:**
-
-7. In the left sidebar, click **APIs & Services**, then click **Credentials**
-8. At the top, click **+ Create Credentials**, then click **API key**
-9. A key will appear (it starts with "AIza...") — **copy it** and save it somewhere, you'll need it in Step 7
-10. Click **Close**
-
-**Turn on the required APIs (two links to click):**
-
-11. Open this link in a new tab: **https://console.cloud.google.com/apis/library/places-backend.googleapis.com**
-    - Click the blue **Enable** button
-12. Open this link in a new tab: **https://console.cloud.google.com/apis/library/geocoding-backend.googleapis.com**
-    - Click the blue **Enable** button
-
-Done! The APIs may take a minute to activate.
-
-### Step 6: Start the App
-
-In Command Prompt, paste this line and press Enter:
+### Step 5: Start & Configure
 
 ```
 cd %USERPROFILE%\Desktop\maps-lead-gen && npm run dev
 ```
 
-You should see something like:
-```
-[server] Server running on http://127.0.0.1:3001
-[client] Local: http://localhost:5173/
-```
-
-**Leave this Command Prompt window open** — closing it stops the app.
-
-### Step 7: Open the App and Enter Your API Key
-
-1. Open your web browser (Chrome, Edge, Firefox — any works)
-2. Go to **http://localhost:5173**
-3. Click the **gear icon** in the top-right corner
-4. Paste your Google API key (the "AIza..." key from Step 5) into the text field
-5. Click **Save** — it should say "API key valid" in green
-6. Close the settings panel by clicking the X
-
-Your key is saved in your browser — you won't need to enter it again.
-
-### Step 8: Search!
-
-1. **Business Type**: Type what you're looking for (e.g., `chiropractor`, `dentist`, `behavioral health`)
-2. **Location**: Type a city and state (e.g., `Austin, TX`) or a zip code (e.g., `78701`)
-3. **Target Results**: Enter how many results you want (e.g., `200` or `500`). Leave blank for a quick search (up to 60 results)
-4. Set any filters:
-   - **Website**: Choose "No website" to find businesses that don't have one
-   - **Reviews**: Set min/max to find businesses with few reviews (newer/smaller businesses)
-   - **Exclude**: Type business names to skip, separated by commas (e.g., `The Joint, HealthSource`)
-5. Click **Search**
-6. Click any row to expand it and see full details
-7. Use the checkboxes to select specific leads, then click **Export Selected**
-8. Or click **Export All** to download everything as a CSV file you can open in Excel
+Open **http://localhost:5173**, click the **gear icon**, paste your API key, click **Save**.
 
 ---
 
 ## Everyday Use
 
-**Mac:**
-1. Open **Terminal**
-2. Paste: `cd ~/Desktop/maps-lead-gen && npm run dev`
-3. Open **http://localhost:5173** in your browser
-4. When done, press `Ctrl + C` in Terminal to stop
+**Mac:** `cd ~/Desktop/maps-lead-gen && npm run dev` → open http://localhost:5173
+**Windows:** `cd %USERPROFILE%\Desktop\maps-lead-gen && npm run dev` → open http://localhost:5173
 
-**Windows:**
-1. Open **Command Prompt** (Windows key → type `cmd` → Enter)
-2. Paste: `cd %USERPROFILE%\Desktop\maps-lead-gen && npm run dev`
-3. Open **http://localhost:5173** in your browser
-4. When done, press `Ctrl + C` in Command Prompt to stop
+Press `Ctrl + C` in the terminal to stop. Previous searches are cached — click history to reload for free.
 
-Your previous searches are saved — click any search in the history bar to reload those results instantly (no API cost).
+---
+
+## Features
+
+### Search & Filter
+| Feature | Description |
+|---------|-------------|
+| **Target Results** | Enter how many you want (200, 500, 1000) — auto-calculates grid size |
+| **3 Data Sources** | Google Places API, SerpAPI, or free Docker scraper |
+| **Filters** | Website, phone, reviews (min/max), rating (min/max), category, exclude names |
+| **Search History** | Click any past search to reload instantly (no API cost) |
+| **Cost Tracker** | Session spend, per-search cost, remaining monthly credit |
+
+### Lead Scoring
+| Feature | Description |
+|---------|-------------|
+| **Rule-Based Scoring** | Customizable weight sliders: no website (+30), low reviews (+20), low rating (+15), etc. |
+| **AI Enhancement** | Optional — OpenAI, Claude, or Gemini adds a 1-line assessment per lead |
+| **Score Badges** | Hot (70+), Warm (40-69), Low (0-39) — sortable column |
+| **Score Breakdown** | Expand any row to see exactly why it scored the way it did |
+
+### Lead Enrichment
+| Feature | Description |
+|---------|-------------|
+| **Website Check** | SSL, mobile-friendly, load speed, platform detection, booking page, contact form |
+| **Email Finder** | Hunter.io integration — find contact emails for businesses with websites |
+| **Tech Score** | 0-100 rating of website quality (low = better lead for selling web services) |
+
+### Lead Management
+| Feature | Description |
+|---------|-------------|
+| **Pipeline** | Click "Manage" on any lead → set status: New → Contacted → Replied → Meeting → Won/Lost |
+| **Notes** | Add notes per lead — persists across sessions |
+| **Outreach Templates** | 4 default GHL-focused templates + create your own. Auto-fills business name, gaps, reviews |
+| **Template Variables** | `{business_name}`, `{gaps}`, `{reviews}`, `{rating}`, `{platform}`, `{email}`, `{your_name}` |
+
+### Export
+| Feature | Description |
+|---------|-------------|
+| **Column Picker** | Choose exactly which columns to include in your CSV |
+| **Export Selected** | Checkboxes to pick specific leads |
+| **Export All** | Download entire filtered result set |
+| **18 Available Columns** | Name, address, phone, email, website, rating, reviews, score, AI summary, platform, mobile, SSL, booking, load time, status, notes, categories, Google Maps URL |
+
+---
+
+## API Keys & Costs
+
+| Service | What It Does | Cost | Get Key |
+|---------|-------------|------|---------|
+| **Google Places** | Primary search data source | $200/mo free credit (~6,000 searches) | [Google Cloud Console](https://console.cloud.google.com/apis/credentials) |
+| **SerpAPI** | Alternative search (no result cap) | $50/mo for 5,000 searches | [serpapi.com](https://serpapi.com/manage-api-key) |
+| **Hunter.io** | Find contact emails | 25 free/mo, $49/mo for 1,000 | [hunter.io](https://hunter.io/api-keys) |
+| **OpenAI** | AI lead scoring (GPT-4o-mini) | ~$0.15 per 1,000 leads | [platform.openai.com](https://platform.openai.com/api-keys) |
+| **Anthropic** | AI lead scoring (Claude Haiku) | ~$0.25 per 1,000 leads | [console.anthropic.com](https://console.anthropic.com/settings/keys) |
+| **Google Gemini** | AI lead scoring (Gemini Flash) | ~$0.10 per 1,000 leads | [aistudio.google.com](https://aistudio.google.com/apikey) |
+| **Docker Scraper** | Free alternative (no API key) | Free | [gosom/google-maps-scraper](https://github.com/gosom/google-maps-scraper) |
+
+Only the Google Places API key is required. Everything else is optional.
+
+### Search Cost Breakdown
+
+| Target Results | Grid | API Calls | Cost |
+|---------------|------|-----------|------|
+| Up to 60 | None | ~3 | ~$0.10 |
+| ~200 | 2x2 | ~12 | ~$0.38 |
+| ~500 | 3x3 | ~27 | ~$0.86 |
+| ~1,000 | 4x4 | ~48 | ~$1.54 |
+| ~2,000 | 6x6 | ~108 | ~$3.46 |
+
+Cached searches cost $0.
 
 ---
 
@@ -274,57 +178,21 @@ Your previous searches are saved — click any search in the history bar to relo
 
 | Problem | Solution |
 |---------|----------|
-| `command not found` when typing `npm` | Node.js didn't install. Go back to Step 1 |
-| "API key is invalid" | Make sure you clicked Enable on both APIs in Step 4. Wait a minute and try again |
-| Browser says "connection refused" | Make sure the Terminal window with `npm run dev` is still open and running |
-| 0 results showing but it says "0 of 20" | Your filters are too narrow — try removing the review or rating limits |
-| App feels slow on first search | Normal — first search takes 1-3 seconds. Cached searches load instantly |
+| `command not found` when typing `npm` | Node.js didn't install — go back to Step 1 |
+| "API key is invalid" | Enable both APIs (Places + Geocoding). Wait a minute and retry |
+| "connection refused" in browser | Terminal with `npm run dev` must be open and running |
+| "0 of 20 results" showing | Filters are too narrow — clear review/rating limits |
+| Find Emails button doesn't work | Set your Hunter.io key in Settings first |
 
 ---
 
-## API Costs
+## Tech Stack
 
-Google gives you **$200/month in free credits**. Here's what searches cost:
-
-| Target Results | Grid | API Calls | Cost | Actual Results (after dedup) |
-|---------------|------|-----------|------|------------------------------|
-| Up to 60 | None | ~3 | ~$0.10 | up to 60 |
-| ~200 | 2x2 | ~12 | ~$0.38 | ~170 |
-| ~500 | 3x3 | ~27 | ~$0.86 | ~380 |
-| ~1,000 | 4x4 | ~48 | ~$1.54 | ~670 |
-| ~2,000 | 6x6 | ~108 | ~$3.46 | ~1,500 |
-
-Re-running a previous search from history costs **$0** (results are cached in your browser).
-
-The cost tracker in the top-right corner of the app shows exactly how much you've spent.
-
----
-
-## Features
-
-| Feature | Description |
-|---------|-------------|
-| **Target Results** | Enter how many results you want — the app figures out the grid automatically |
-| **Filters** | Website (yes/no), phone, review count (min/max), rating (min/max), category, exclude names |
-| **Result Caching** | Previous searches cached in your browser — replay for free |
-| **Cost Tracker** | Session spend, last search cost, remaining monthly credit |
-| **Row Selection** | Checkboxes to pick specific leads, export only those |
-| **Expandable Rows** | Click any row for full details (all categories, coordinates, hours, place ID) |
-| **Pagination** | 25 results per page |
-| **Search History** | Click any past search to reload results instantly |
-| **CSV Export** | Name, address, phone, website, rating, reviews, categories, Google Maps URL |
-
----
-
-## Optional: Scraper Mode (Advanced)
-
-If you don't want to use the Google API, you can use a free open-source scraper instead. This requires Docker.
-
-```bash
-docker run -d -p 8080:8080 gosom/google-maps-scraper
-```
-
-Then select "Scraper (Docker)" as the data source in the app. No API key needed, no result limit, but slower.
+- **Backend**: Express + TypeScript
+- **Frontend**: React + Vite + Tailwind CSS
+- **Data**: Google Places API, SerpAPI, gosom scraper
+- **AI**: OpenAI, Anthropic, Google Gemini
+- **Storage**: Browser localStorage (no database, no accounts)
 
 ---
 
