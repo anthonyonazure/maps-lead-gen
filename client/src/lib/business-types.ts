@@ -231,20 +231,27 @@ export function searchBusinessTypes(query: string): BusinessTypeOption[] {
 
 /** Get suggested related business types based on what's already selected */
 export function getRelatedTypes(selectedValues: string[]): BusinessTypeOption[] {
-  const selectedSet = new Set(selectedValues.map(v => v.toLowerCase().replace(/ /g, '_').replace(/\//g, '_')));
+  // Build set of selected values (match by label → value)
+  const selectedSet = new Set(selectedValues.map(v => {
+    const match = BUSINESS_TYPES.find(t => t.label.toLowerCase() === v.toLowerCase());
+    return match?.value || v.toLowerCase().replace(/ /g, '_').replace(/\//g, '_');
+  }));
   const relatedValues = new Set<string>();
 
   for (const selected of selectedValues) {
-    // Normalize to match keys in RELATED_TYPES
-    const key = selected.toLowerCase().replace(/ /g, '_').replace(/\//g, '_');
+    // Find the matching business type by label or normalized value
+    const selectedType = BUSINESS_TYPES.find(t =>
+      t.label.toLowerCase() === selected.toLowerCase() ||
+      t.value === selected.toLowerCase().replace(/ /g, '_').replace(/\//g, '_')
+    );
+    // Look up related types by the actual value key
+    const key = selectedType?.value || selected.toLowerCase().replace(/ /g, '_').replace(/\//g, '_');
     const related = RELATED_TYPES[key];
     if (related) {
       for (const r of related) {
         if (!selectedSet.has(r)) relatedValues.add(r);
       }
     }
-    // Also suggest same-category items
-    const selectedType = BUSINESS_TYPES.find(t => t.label.toLowerCase() === selected.toLowerCase() || t.value === key);
     if (selectedType) {
       for (const t of BUSINESS_TYPES) {
         if (t.category === selectedType.category && !selectedSet.has(t.value)) {
