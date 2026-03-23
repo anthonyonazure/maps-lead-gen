@@ -16,9 +16,10 @@ interface ResultsTableProps {
   page: number;
   pageSize: number;
   onPageChange: (page: number) => void;
+  onLeadClick?: (lead: LeadResult) => void;
 }
 
-export function ResultsTable({ results, sortField, sortDir, onSort, selectedIds, onSelectionChange, page, pageSize, onPageChange }: ResultsTableProps) {
+export function ResultsTable({ results, sortField, sortDir, onSort, selectedIds, onSelectionChange, page, pageSize, onPageChange, onLeadClick }: ResultsTableProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const totalPages = Math.ceil(results.length / pageSize);
@@ -145,7 +146,15 @@ export function ResultsTable({ results, sortField, sortDir, onSort, selectedIds,
                       ))}
                     </div>
                   </td>
-                  <td className="px-3 py-2.5" onClick={e => e.stopPropagation()}>
+                  <td className="px-3 py-2.5 flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                    {onLeadClick && (
+                      <button
+                        onClick={() => onLeadClick(r)}
+                        className="px-2 py-0.5 text-xs bg-purple-50 text-purple-700 rounded border border-purple-200 hover:bg-purple-100 font-medium"
+                      >
+                        Manage
+                      </button>
+                    )}
                     <a
                       href={r.googleMapsUrl}
                       target="_blank"
@@ -204,6 +213,39 @@ export function ResultsTable({ results, sortField, sortDir, onSort, selectedIds,
                           <p className="text-xs font-medium text-slate-500 mb-1">Place ID</p>
                           <p className="text-slate-500 font-mono text-xs truncate">{r.placeId}</p>
                         </div>
+                        {r.contactEmail && (
+                          <div>
+                            <p className="text-xs font-medium text-slate-500 mb-1">Contact Email</p>
+                            <p className="text-blue-600">{r.contactEmail} <span className="text-xs text-slate-400">({r.emailConfidence}% confidence)</span></p>
+                          </div>
+                        )}
+                        {r.websiteAnalysis && (
+                          <div className="md:col-span-2">
+                            <p className="text-xs font-medium text-slate-500 mb-1">Website Analysis</p>
+                            <div className="flex flex-wrap gap-1">
+                              <span className={`px-1.5 py-0.5 text-xs rounded ${r.websiteAnalysis.hasSSL ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                                {r.websiteAnalysis.hasSSL ? 'SSL' : 'No SSL'}
+                              </span>
+                              <span className={`px-1.5 py-0.5 text-xs rounded ${r.websiteAnalysis.hasMobileViewport ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                                {r.websiteAnalysis.hasMobileViewport ? 'Mobile OK' : 'Not Mobile'}
+                              </span>
+                              <span className={`px-1.5 py-0.5 text-xs rounded ${r.websiteAnalysis.hasBooking ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'}`}>
+                                {r.websiteAnalysis.hasBooking ? 'Has Booking' : 'No Booking'}
+                              </span>
+                              {r.websiteAnalysis.platform && (
+                                <span className="px-1.5 py-0.5 text-xs rounded bg-slate-100 text-slate-600">{r.websiteAnalysis.platform}</span>
+                              )}
+                              {r.websiteAnalysis.loadTimeMs && (
+                                <span className={`px-1.5 py-0.5 text-xs rounded ${r.websiteAnalysis.loadTimeMs > 3000 ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
+                                  {(r.websiteAnalysis.loadTimeMs / 1000).toFixed(1)}s load
+                                </span>
+                              )}
+                              <span className={`px-1.5 py-0.5 text-xs rounded font-medium ${r.websiteAnalysis.techScore < 50 ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
+                                Tech: {r.websiteAnalysis.techScore}/100
+                              </span>
+                            </div>
+                          </div>
+                        )}
                         {r.aiSummary && (
                           <div className="md:col-span-3">
                             <p className="text-xs font-medium text-slate-500 mb-1">AI Assessment</p>

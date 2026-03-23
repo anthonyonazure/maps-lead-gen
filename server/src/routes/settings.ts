@@ -74,6 +74,21 @@ settingsRouter.post('/validate-anthropic-key', async (req: Request, res: Respons
   }
 });
 
+// POST /api/settings/validate-hunter-key
+settingsRouter.post('/validate-hunter-key', async (req: Request, res: Response) => {
+  const { apiKey } = req.body;
+  if (!apiKey) { res.status(400).json({ valid: false, error: 'No key provided' }); return; }
+
+  try {
+    const testRes = await fetch(`https://api.hunter.io/v2/account?api_key=${apiKey}`);
+    if (!testRes.ok) { res.json({ valid: false, error: 'Invalid Hunter.io key' }); return; }
+    const data = await testRes.json() as any;
+    res.json({ valid: true, remaining: data?.data?.requests?.searches?.available });
+  } catch (err: any) {
+    res.json({ valid: false, error: err.message });
+  }
+});
+
 // POST /api/settings/validate-gemini-key
 settingsRouter.post('/validate-gemini-key', async (req: Request, res: Response) => {
   const { apiKey } = req.body;

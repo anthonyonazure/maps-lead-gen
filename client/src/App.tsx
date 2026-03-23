@@ -6,10 +6,12 @@ import { SettingsPanel } from './components/SettingsPanel';
 import { CostTracker } from './components/CostTracker';
 import { SearchHistory, addToHistory, getCachedResults } from './components/SearchHistory';
 import { ScoringConfig } from './components/ScoringConfig';
-import { MapPin, Settings, Download } from 'lucide-react';
+import { LeadPipeline } from './components/LeadPipeline';
+import { OutreachTemplates, loadTemplates } from './components/OutreachTemplates';
+import { MapPin, Settings, Download, Globe, Mail, MessageSquare } from 'lucide-react';
 import type { LeadResult, Filters, SearchResponse, ScoringConfig as ScoringConfigType } from './lib/types';
 import { DEFAULT_FILTERS, DEFAULT_SCORING_CONFIG } from './lib/types';
-import { searchPlaces, scoreResults, exportCSV } from './lib/api';
+import { searchPlaces, scoreResults, enrichWebsites, enrichEmails, exportCSV } from './lib/api';
 
 type SortField = keyof LeadResult;
 type SortDir = 'asc' | 'desc';
@@ -21,6 +23,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [sessionCost, setSessionCost] = useState(0);
@@ -30,6 +33,8 @@ export default function App() {
   const pageSize = 25;
   const [scoringConfig, setScoringConfig] = useState<ScoringConfigType>(DEFAULT_SCORING_CONFIG);
   const [scoring, setScoring] = useState(false);
+  const [enriching, setEnriching] = useState<string | null>(null);
+  const [pipelineLead, setPipelineLead] = useState<LeadResult | null>(null);
 
   const apiKey = localStorage.getItem('gmaps-api-key') || '';
 
@@ -51,7 +56,6 @@ export default function App() {
     setPage(0);
 
     try {
-      // Check cache first to avoid paying for duplicate searches
       const cached = getCachedResults(params.query, params.location);
       if (cached) {
         setResults(cached);
@@ -121,9 +125,8 @@ export default function App() {
     setScoring(true);
     try {
       const aiApiKey = scoringConfig.aiProvider !== 'none'
-        ? localStorage.getItem(`${scoringConfig.aiProvider === 'anthropic' ? 'anthropic' : scoringConfig.aiProvider === 'openai' ? 'openai' : 'gemini'}-key`) || ''
+        ? localStorage.getItem(`${scoringConfig.aiProvider}-key`) || ''
         : undefined;
-
       const scored = await scoreResults(results, { ...scoringConfig, aiApiKey });
       setResults(scored);
     } catch (err: any) {
@@ -131,6 +134,36 @@ export default function App() {
     } finally {
       setScoring(false);
     }
+  };
+
+  const handleEnrichWebsites = async () => {
+    setEnriching('websites');
+    try {
+      const enriched = await enrichWebsites(results);
+      setResults(enriched);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setEnriching(null);
+    }
+  };
+
+  const handleEnrichEmails = async () => {
+    const hunterKey = localStorage.getItem('hunter-key') || '';
+    if (!hunterKey) { setError('Set your Hunter.io API key in Settings first'); return; }
+    setEnriching('emails');
+    try {
+      const enriched = await enrichEmails(results, hunterKey);
+      setResults(enriched);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setEnriching(null);
+    }
+  };
+
+  const handleLeadUpdate = (updated: LeadResult) => {
+    setResults(prev => prev.map(r => r.placeId === updated.placeId ? updated : r));
   };
 
   const handleSort = (field: SortField) => {
@@ -153,6 +186,13 @@ export default function App() {
           <div className="flex items-center gap-3">
             <CostTracker sessionCost={sessionCost} searchCount={searchCount} lastSearchCost={meta?.apiCost} />
             <button
+              onClick={() => setShowTemplates(!showTemplates)}
+              className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
+              title="Outreach Templates"
+            >
+              <MessageSquare className="h-5 w-5 text-purple-500" />
+            </button>
+            <button
               onClick={() => setShowSettings(!showSettings)}
               className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
             >
@@ -164,6 +204,7 @@ export default function App() {
 
       <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
         {showSettings && <SettingsPanel onClose={() => setShowSettings(false)} />}
+        {showTemplates && <OutreachTemplates onClose={() => setShowTemplates(false)} />}
 
         <SearchForm onSearch={handleSearch} loading={loading} hasApiKey={!!apiKey} />
         <SearchHistory onRerun={(query, location) => {
@@ -171,8 +212,9 @@ export default function App() {
         }} />
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-            {error}
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center justify-between">
+            <span>{error}</span>
+            <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600">&times;</button>
           </div>
         )}
 
@@ -186,27 +228,43 @@ export default function App() {
                   <span className="ml-2 text-slate-400">({meta.deduplicated} dupes removed)</span>
                 ) : null}
                 {meta?.searchDurationMs === 0 && (
-                  <span className="ml-2 text-emerald-500 font-medium">(cached — no API cost)</span>
+                  <span className="ml-2 text-emerald-500 font-medium">(cached)</span>
                 )}
                 {meta?.searchDurationMs !== undefined && meta.searchDurationMs > 0 && (
                   <span className="ml-2 text-slate-400">in {(meta.searchDurationMs / 1000).toFixed(1)}s</span>
                 )}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  onClick={handleEnrichWebsites}
+                  disabled={!!enriching}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700 disabled:opacity-50 transition-colors"
+                >
+                  <Globe className="h-3.5 w-3.5" />
+                  {enriching === 'websites' ? 'Checking...' : 'Check Sites'}
+                </button>
+                <button
+                  onClick={handleEnrichEmails}
+                  disabled={!!enriching}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+                >
+                  <Mail className="h-3.5 w-3.5" />
+                  {enriching === 'emails' ? 'Finding...' : 'Find Emails'}
+                </button>
                 {selectedIds.size > 0 && (
                   <button
                     onClick={() => exportCSV(filteredResults.filter(r => selectedIds.has(r.placeId)))}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                    className="inline-flex items-center gap-2 px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
                   >
-                    <Download className="h-4 w-4" />
+                    <Download className="h-3.5 w-3.5" />
                     Export Selected ({selectedIds.size})
                   </button>
                 )}
                 <button
                   onClick={() => exportCSV(filteredResults)}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
+                  className="inline-flex items-center gap-2 px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
                 >
-                  <Download className="h-4 w-4" />
+                  <Download className="h-3.5 w-3.5" />
                   Export All ({filteredResults.length})
                 </button>
               </div>
@@ -231,6 +289,7 @@ export default function App() {
               page={page}
               pageSize={pageSize}
               onPageChange={setPage}
+              onLeadClick={(lead) => setPipelineLead(lead)}
             />
           </>
         )}
@@ -249,6 +308,15 @@ export default function App() {
           </div>
         )}
       </main>
+
+      {pipelineLead && (
+        <LeadPipeline
+          lead={pipelineLead}
+          onUpdate={handleLeadUpdate}
+          onClose={() => setPipelineLead(null)}
+          outreachTemplates={loadTemplates()}
+        />
+      )}
     </div>
   );
 }

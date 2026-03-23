@@ -26,6 +26,21 @@ export interface LeadResult {
   score?: number;
   scoreBreakdown?: Record<string, number>;
   aiSummary?: string;
+  contactEmail?: string | null;
+  emailConfidence?: number;
+  emailSource?: string;
+  websiteAnalysis?: {
+    reachable: boolean;
+    hasSSL: boolean;
+    loadTimeMs: number | null;
+    platform: string | null;
+    hasMobileViewport: boolean;
+    hasContactForm: boolean;
+    hasBooking: boolean;
+    techScore: number;
+  };
+  leadStatus?: 'new' | 'contacted' | 'replied' | 'meeting' | 'won' | 'lost';
+  notes?: string;
 }
 
 export interface ScoringConfig {

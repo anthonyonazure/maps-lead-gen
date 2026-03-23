@@ -19,16 +19,24 @@ exportRouter.post('/', (req: Request, res: Response) => {
     return;
   }
 
-  const headers = ['Name', 'Address', 'Phone', 'Website', 'Rating', 'Review Count', 'Score', 'AI Summary', 'Categories', 'Google Maps URL'];
+  const headers = ['Name', 'Address', 'Phone', 'Email', 'Website', 'Rating', 'Review Count', 'Score', 'AI Summary', 'Site Platform', 'Mobile Friendly', 'Has SSL', 'Has Booking', 'Load Time (s)', 'Lead Status', 'Notes', 'Categories', 'Google Maps URL'];
   const rows = results.map(r => [
     escapeCSV(r.name),
     escapeCSV(r.address),
     r.phone || '',
+    r.contactEmail || '',
     r.website || '',
     r.rating?.toString() ?? '',
     r.reviewCount.toString(),
     r.score?.toString() ?? '',
     escapeCSV(r.aiSummary || ''),
+    r.websiteAnalysis?.platform || '',
+    r.websiteAnalysis?.hasMobileViewport ? 'Yes' : r.websiteAnalysis ? 'No' : '',
+    r.websiteAnalysis?.hasSSL ? 'Yes' : r.websiteAnalysis ? 'No' : '',
+    r.websiteAnalysis?.hasBooking ? 'Yes' : r.websiteAnalysis ? 'No' : '',
+    r.websiteAnalysis?.loadTimeMs ? (r.websiteAnalysis.loadTimeMs / 1000).toFixed(1) : '',
+    r.leadStatus || '',
+    escapeCSV(r.notes || ''),
     escapeCSV(r.categories.join('; ')),
     r.googleMapsUrl,
   ].join(','));

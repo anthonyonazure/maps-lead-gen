@@ -9,6 +9,7 @@ interface SettingsPanelProps {
 const API_KEYS = [
   { id: 'gmaps-api-key', provider: 'google', label: 'Google Places API', link: 'https://console.cloud.google.com/apis/credentials', hint: 'Enable Places API (New) + Geocoding API. $200/mo free credit.' },
   { id: 'serpapi-key', provider: 'serpapi', label: 'SerpAPI', link: 'https://serpapi.com/manage-api-key', hint: '$50/mo for 5000 searches, or pay-as-you-go.' },
+  { id: 'hunter-key', provider: 'hunter', label: 'Hunter.io (email finder)', link: 'https://hunter.io/api-keys', hint: '25 free searches/mo, $49/mo for 1000.' },
   { id: 'openai-key', provider: 'openai', label: 'OpenAI (for AI scoring)', link: 'https://platform.openai.com/api-keys', hint: 'Uses GPT-4o-mini. ~$0.15 per 1000 leads scored.' },
   { id: 'anthropic-key', provider: 'anthropic', label: 'Anthropic / Claude (for AI scoring)', link: 'https://console.anthropic.com/settings/keys', hint: 'Uses Claude Haiku. ~$0.25 per 1000 leads scored.' },
   { id: 'gemini-key', provider: 'gemini', label: 'Google Gemini (for AI scoring)', link: 'https://aistudio.google.com/apikey', hint: 'Uses Gemini 2.0 Flash. ~$0.10 per 1000 leads scored.' },

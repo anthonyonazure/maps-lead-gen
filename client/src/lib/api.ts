@@ -71,6 +71,28 @@ export async function checkScraperStatus(): Promise<boolean> {
   return data.available;
 }
 
+export async function enrichWebsites(results: LeadResult[]): Promise<LeadResult[]> {
+  const res = await fetch('/api/enrich/websites', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ results }),
+  });
+  if (!res.ok) throw new Error('Website check failed');
+  const data = await res.json();
+  return data.results;
+}
+
+export async function enrichEmails(results: LeadResult[], hunterApiKey: string): Promise<LeadResult[]> {
+  const res = await fetch('/api/enrich/emails', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ results, hunterApiKey }),
+  });
+  if (!res.ok) throw new Error('Email finder failed');
+  const data = await res.json();
+  return data.results;
+}
+
 export async function exportCSV(results: any[]): Promise<void> {
   const res = await fetch('/api/export', {
     method: 'POST',
