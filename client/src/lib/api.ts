@@ -93,11 +93,11 @@ export async function enrichEmails(results: LeadResult[], hunterApiKey: string):
   return data.results;
 }
 
-export async function exportCSV(results: any[]): Promise<void> {
+export async function exportCSV(results: any[], columns?: string[]): Promise<void> {
   const res = await fetch('/api/export', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ results }),
+    body: JSON.stringify({ results, columns }),
   });
   const blob = await res.blob();
   const url = URL.createObjectURL(blob);
@@ -106,4 +106,9 @@ export async function exportCSV(results: any[]): Promise<void> {
   a.download = 'leads.csv';
   a.click();
   URL.revokeObjectURL(url);
+}
+
+export interface ExportColumn {
+  key: string;
+  label: string;
 }

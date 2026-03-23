@@ -8,10 +8,11 @@ import { SearchHistory, addToHistory, getCachedResults } from './components/Sear
 import { ScoringConfig } from './components/ScoringConfig';
 import { LeadPipeline } from './components/LeadPipeline';
 import { OutreachTemplates, loadTemplates } from './components/OutreachTemplates';
+import { ExportDialog } from './components/ExportDialog';
 import { MapPin, Settings, Download, Globe, Mail, MessageSquare } from 'lucide-react';
 import type { LeadResult, Filters, SearchResponse, ScoringConfig as ScoringConfigType } from './lib/types';
 import { DEFAULT_FILTERS, DEFAULT_SCORING_CONFIG } from './lib/types';
-import { searchPlaces, scoreResults, enrichWebsites, enrichEmails, exportCSV } from './lib/api';
+import { searchPlaces, scoreResults, enrichWebsites, enrichEmails } from './lib/api';
 
 type SortField = keyof LeadResult;
 type SortDir = 'asc' | 'desc';
@@ -35,6 +36,7 @@ export default function App() {
   const [scoring, setScoring] = useState(false);
   const [enriching, setEnriching] = useState<string | null>(null);
   const [pipelineLead, setPipelineLead] = useState<LeadResult | null>(null);
+  const [exportData, setExportData] = useState<{ results: LeadResult[]; label: string } | null>(null);
 
   const apiKey = localStorage.getItem('gmaps-api-key') || '';
 
@@ -253,7 +255,7 @@ export default function App() {
                 </button>
                 {selectedIds.size > 0 && (
                   <button
-                    onClick={() => exportCSV(filteredResults.filter(r => selectedIds.has(r.placeId)))}
+                    onClick={() => setExportData({ results: filteredResults.filter(r => selectedIds.has(r.placeId)), label: `Export ${selectedIds.size} Selected` })}
                     className="inline-flex items-center gap-2 px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
                   >
                     <Download className="h-3.5 w-3.5" />
@@ -261,7 +263,7 @@ export default function App() {
                   </button>
                 )}
                 <button
-                  onClick={() => exportCSV(filteredResults)}
+                  onClick={() => setExportData({ results: filteredResults, label: `Export All (${filteredResults.length})` })}
                   className="inline-flex items-center gap-2 px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
                 >
                   <Download className="h-3.5 w-3.5" />
@@ -315,6 +317,14 @@ export default function App() {
           onUpdate={handleLeadUpdate}
           onClose={() => setPipelineLead(null)}
           outreachTemplates={loadTemplates()}
+        />
+      )}
+
+      {exportData && (
+        <ExportDialog
+          results={exportData.results}
+          label={exportData.label}
+          onClose={() => setExportData(null)}
         />
       )}
     </div>
