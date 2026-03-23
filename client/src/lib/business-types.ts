@@ -13,7 +13,9 @@ function t(value: string, category: string, label?: string): BusinessTypeOption 
 
 const BUSINESS_TYPES: BusinessTypeOption[] = [
   // Automotive
-  t('car_dealer', 'Automotive'), t('car_rental', 'Automotive'), t('car_repair', 'Automotive', 'Car Repair / Mechanic'),
+  t('car_dealer', 'Automotive', 'Car Dealer / Used Cars'), t('car_rental', 'Automotive'), t('car_repair', 'Automotive', 'Car Repair / Mechanic'),
+  t('used_car_dealer', 'Automotive', 'Used Car Dealer'), t('auto_body_shop', 'Automotive', 'Auto Body Shop'),
+  t('motorcycle_dealer', 'Automotive', 'Motorcycle Dealer'), t('auto_detailing', 'Automotive', 'Auto Detailing'),
   t('car_wash', 'Automotive'), t('ebike_charging_station', 'Automotive', 'E-Bike Charging'), t('electric_vehicle_charging_station', 'Automotive', 'EV Charging'),
   t('gas_station', 'Automotive'), t('parking', 'Automotive'), t('parking_garage', 'Automotive'), t('parking_lot', 'Automotive'),
   t('rest_stop', 'Automotive'), t('tire_shop', 'Automotive'), t('truck_dealer', 'Automotive'),
