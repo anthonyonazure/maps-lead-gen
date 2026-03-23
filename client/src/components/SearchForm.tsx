@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Search, Zap } from 'lucide-react';
+import { BusinessTypeInput } from './BusinessTypeInput';
 import type { Filters } from '../lib/types';
 
 interface SearchFormProps {
@@ -17,7 +18,7 @@ interface SearchFormProps {
 }
 
 export function SearchForm({ onSearch, loading, hasApiKey }: SearchFormProps) {
-  const [query, setQuery] = useState('');
+  const [queryTypes, setQueryTypes] = useState<string[]>([]);
   const [location, setLocation] = useState('');
   const [radiusMiles, setRadiusMiles] = useState(10);
   const [hasWebsite, setHasWebsite] = useState<'any' | 'yes' | 'no'>('any');
@@ -31,10 +32,12 @@ export function SearchForm({ onSearch, loading, hasApiKey }: SearchFormProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!query.trim() || !location.trim()) return;
+    if (queryTypes.length === 0 || !location.trim()) return;
     const target = targetResults ? Number(targetResults) : null;
+    // Join multiple types into one query string
+    const query = queryTypes.join(', ');
     onSearch(
-      { query: query.trim(), location: location.trim(), radiusMiles, deepSearch, gridSize, targetResults: target, dataSource },
+      { query, location: location.trim(), radiusMiles, deepSearch, gridSize, targetResults: target, dataSource },
       {
         hasWebsite,
         minReviews: minReviews ? Number(minReviews) : null,
@@ -47,16 +50,9 @@ export function SearchForm({ onSearch, loading, hasApiKey }: SearchFormProps) {
   return (
     <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-slate-200 p-6 space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
+        <div className="md:col-span-2">
           <label className="block text-sm font-medium text-slate-700 mb-1">Business Type</label>
-          <input
-            type="text"
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            placeholder="e.g., chiropractor, behavioral health, dentist"
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-            required
-          />
+          <BusinessTypeInput values={queryTypes} onChange={setQueryTypes} />
         </div>
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Location</label>
@@ -69,20 +65,21 @@ export function SearchForm({ onSearch, loading, hasApiKey }: SearchFormProps) {
             required
           />
         </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Target Results</label>
+      </div>
+
+      <div className="flex items-center gap-6 flex-wrap">
+        <div className="flex items-center gap-2">
+          <label className="text-sm text-slate-600">Target:</label>
           <input
             type="number"
             value={targetResults}
             onChange={e => setTargetResults(e.target.value)}
-            placeholder="e.g., 200, 500, 1000 (blank = default 60)"
+            placeholder="60"
             min={1}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+            className="px-2 py-1 border border-slate-300 rounded-lg text-sm w-20"
           />
         </div>
-      </div>
 
-      <div className="flex items-center gap-6 flex-wrap">
         <div className="flex items-center gap-2">
           <label className="text-sm text-slate-600">Radius:</label>
           <select
@@ -100,7 +97,7 @@ export function SearchForm({ onSearch, loading, hasApiKey }: SearchFormProps) {
           <label className="text-sm text-slate-600">Source:</label>
           <select
             value={dataSource}
-            onChange={e => setDataSource(e.target.value as 'google' | 'scraper')}
+            onChange={e => setDataSource(e.target.value as 'google' | 'scraper' | 'serpapi')}
             className="px-2 py-1 border border-slate-300 rounded-lg text-sm"
           >
             <option value="google">Google Places API</option>
@@ -192,11 +189,11 @@ export function SearchForm({ onSearch, loading, hasApiKey }: SearchFormProps) {
 
       <button
         type="submit"
-        disabled={loading || (dataSource === 'google' && !hasApiKey) || (dataSource === 'serpapi' && !localStorage.getItem('serpapi-key'))}
+        disabled={loading || queryTypes.length === 0 || (dataSource === 'google' && !hasApiKey) || (dataSource === 'serpapi' && !localStorage.getItem('serpapi-key'))}
         className="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
         <Search className="h-4 w-4" />
-        {loading ? 'Searching...' : 'Search'}
+        {loading ? 'Searching...' : `Search${queryTypes.length > 1 ? ` (${queryTypes.length} types)` : ''}`}
       </button>
     </form>
   );
