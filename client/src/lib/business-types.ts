@@ -238,30 +238,48 @@ export function getRelatedTypes(selectedValues: string[]): BusinessTypeOption[] 
   }));
   const relatedValues = new Set<string>();
 
+  const explicitRelated = new Set<string>();
+
   for (const selected of selectedValues) {
-    // Find the matching business type by label or normalized value
     const selectedType = BUSINESS_TYPES.find(t =>
       t.label.toLowerCase() === selected.toLowerCase() ||
       t.value === selected.toLowerCase().replace(/ /g, '_').replace(/\//g, '_')
     );
-    // Look up related types by the actual value key
     const key = selectedType?.value || selected.toLowerCase().replace(/ /g, '_').replace(/\//g, '_');
     const related = RELATED_TYPES[key];
     if (related) {
       for (const r of related) {
-        if (!selectedSet.has(r)) relatedValues.add(r);
-      }
-    }
-    if (selectedType) {
-      for (const t of BUSINESS_TYPES) {
-        if (t.category === selectedType.category && !selectedSet.has(t.value)) {
-          relatedValues.add(t.value);
+        if (!selectedSet.has(r)) {
+          explicitRelated.add(r);
+          relatedValues.add(r);
         }
       }
     }
   }
 
-  return BUSINESS_TYPES.filter(t => relatedValues.has(t.value)).slice(0, 8);
+  // Only add same-category items if we have fewer than 8 explicit related
+  if (explicitRelated.size < 8) {
+    for (const selected of selectedValues) {
+      const selectedType = BUSINESS_TYPES.find(t =>
+        t.label.toLowerCase() === selected.toLowerCase() ||
+        t.value === selected.toLowerCase().replace(/ /g, '_').replace(/\//g, '_')
+      );
+      if (selectedType) {
+        for (const t of BUSINESS_TYPES) {
+          if (t.category === selectedType.category && !selectedSet.has(t.value) && !relatedValues.has(t.value)) {
+            relatedValues.add(t.value);
+            if (relatedValues.size >= 8) break;
+          }
+        }
+      }
+      if (relatedValues.size >= 8) break;
+    }
+  }
+
+  // Put explicit related first, then category matches
+  const result = BUSINESS_TYPES.filter(t => explicitRelated.has(t.value));
+  const categoryFill = BUSINESS_TYPES.filter(t => relatedValues.has(t.value) && !explicitRelated.has(t.value));
+  return [...result, ...categoryFill].slice(0, 8);
 }
 
 export { BUSINESS_TYPES };
