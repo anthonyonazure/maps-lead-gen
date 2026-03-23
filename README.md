@@ -75,8 +75,10 @@ Open **http://localhost:5173**, click the **gear icon**, paste your API key, cli
 ### Step 3: Download & Install
 
 ```
-cd %USERPROFILE%\Desktop && git clone https://github.com/anthonyonazure/maps-lead-gen.git
-cd %USERPROFILE%\Desktop\maps-lead-gen && npm install
+cd %USERPROFILE%\Desktop
+git clone https://github.com/anthonyonazure/maps-lead-gen.git
+cd maps-lead-gen
+npm install
 ```
 
 ### Step 4: Get a Google API Key
@@ -86,7 +88,8 @@ Same as Mac Step 3 above.
 ### Step 5: Start & Configure
 
 ```
-cd %USERPROFILE%\Desktop\maps-lead-gen && npm run dev
+cd %USERPROFILE%\Desktop\maps-lead-gen
+npm run dev
 ```
 
 Open **http://localhost:5173**, click the **gear icon**, paste your API key, click **Save**.
@@ -96,7 +99,7 @@ Open **http://localhost:5173**, click the **gear icon**, paste your API key, cli
 ## Everyday Use
 
 **Mac:** `cd ~/Desktop/maps-lead-gen && npm run dev` → open http://localhost:5173
-**Windows:** `cd %USERPROFILE%\Desktop\maps-lead-gen && npm run dev` → open http://localhost:5173
+**Windows:** Open Command Prompt, run `cd %USERPROFILE%\Desktop\maps-lead-gen` then `npm run dev` → open http://localhost:5173
 
 Press `Ctrl + C` in the terminal to stop. Previous searches are cached — click history to reload for free.
 
