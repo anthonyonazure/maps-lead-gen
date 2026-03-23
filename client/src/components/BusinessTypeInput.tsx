@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { X } from 'lucide-react';
-import { searchBusinessTypes, type BusinessTypeOption } from '../lib/business-types';
+import { searchBusinessTypes, getRelatedTypes, type BusinessTypeOption } from '../lib/business-types';
 
 interface BusinessTypeInputProps {
   values: string[];
@@ -15,10 +15,18 @@ export function BusinessTypeInput({ values, onChange }: BusinessTypeInputProps) 
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const related = getRelatedTypes(values);
+
   useEffect(() => {
-    setSuggestions(searchBusinessTypes(input));
+    if (input.trim()) {
+      setSuggestions(searchBusinessTypes(input));
+    } else if (values.length > 0 && related.length > 0) {
+      setSuggestions(related);
+    } else {
+      setSuggestions(searchBusinessTypes(''));
+    }
     setHighlightIndex(-1);
-  }, [input]);
+  }, [input, values.length]);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -93,6 +101,11 @@ export function BusinessTypeInput({ values, onChange }: BusinessTypeInputProps) 
 
       {open && suggestions.length > 0 && (
         <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
+          {!input.trim() && values.length > 0 && related.length > 0 && (
+            <div className="px-3 py-1.5 text-xs font-medium text-purple-600 bg-purple-50 border-b border-purple-100">
+              Similar types you might want to add
+            </div>
+          )}
           {suggestions.map((s, i) => {
             const alreadySelected = values.some(v => v.toLowerCase() === s.label.toLowerCase());
             return (

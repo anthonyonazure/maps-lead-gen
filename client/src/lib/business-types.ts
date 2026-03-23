@@ -155,12 +155,106 @@ const BUSINESS_TYPES: BusinessTypeOption[] = [
 // Sort alphabetically by label
 BUSINESS_TYPES.sort((a, b) => a.label.localeCompare(b.label));
 
+// Related business types — when you pick one, suggest these
+const RELATED_TYPES: Record<string, string[]> = {
+  // Health & Wellness cluster
+  chiropractor: ['physiotherapist', 'wellness_center', 'massage', 'spa', 'yoga_studio', 'medical_clinic'],
+  dentist: ['dental_clinic', 'skin_care_clinic', 'medical_clinic'],
+  dental_clinic: ['dentist', 'skin_care_clinic', 'medical_clinic'],
+  doctor: ['medical_clinic', 'medical_center', 'pharmacy', 'general_hospital'],
+  medical_clinic: ['doctor', 'medical_center', 'pharmacy', 'chiropractor', 'physiotherapist'],
+  physiotherapist: ['chiropractor', 'wellness_center', 'gym', 'fitness_center', 'massage'],
+  wellness_center: ['chiropractor', 'yoga_studio', 'spa', 'massage', 'physiotherapist'],
+  spa: ['massage', 'massage_spa', 'wellness_center', 'skin_care_clinic', 'beauty_salon', 'nail_salon'],
+  yoga_studio: ['fitness_center', 'gym', 'wellness_center', 'spa'],
+  massage: ['massage_spa', 'spa', 'chiropractor', 'wellness_center'],
+  pharmacy: ['drugstore', 'medical_clinic', 'doctor'],
+
+  // Beauty cluster
+  hair_salon: ['barber_shop', 'beauty_salon', 'nail_salon', 'skin_care_clinic', 'tanning_studio'],
+  beauty_salon: ['hair_salon', 'nail_salon', 'spa', 'skin_care_clinic', 'makeup_artist'],
+  barber_shop: ['hair_salon', 'beauty_salon'],
+  nail_salon: ['beauty_salon', 'hair_salon', 'spa'],
+
+  // Fitness cluster
+  gym: ['fitness_center', 'yoga_studio', 'sports_club', 'swimming_pool'],
+  fitness_center: ['gym', 'yoga_studio', 'sports_club', 'physiotherapist'],
+
+  // Automotive cluster
+  car_dealer: ['used_car_dealer', 'car_rental', 'car_repair', 'auto_body_shop', 'auto_detailing'],
+  used_car_dealer: ['car_dealer', 'car_repair', 'auto_body_shop', 'tire_shop'],
+  car_repair: ['auto_body_shop', 'tire_shop', 'car_wash', 'auto_detailing', 'towing_service'],
+  auto_body_shop: ['car_repair', 'auto_detailing', 'tire_shop'],
+
+  // Home services cluster
+  plumber: ['electrician', 'hvac', 'roofing_contractor', 'general_contractor', 'handyman'],
+  electrician: ['plumber', 'hvac', 'solar_installer', 'general_contractor', 'handyman'],
+  roofing_contractor: ['general_contractor', 'plumber', 'electrician', 'fencing_contractor', 'painter'],
+  landscaper: ['lawn_care_service', 'tree_service', 'fencing_contractor', 'pool_service', 'pressure_washing'],
+  lawn_care_service: ['landscaper', 'tree_service', 'pest_control', 'pressure_washing'],
+  hvac: ['electrician', 'plumber', 'general_contractor', 'solar_installer'],
+  general_contractor: ['roofing_contractor', 'plumber', 'electrician', 'painter', 'handyman'],
+  handyman: ['general_contractor', 'plumber', 'electrician', 'painter', 'locksmith'],
+  house_cleaning: ['carpet_cleaning', 'window_cleaning', 'pressure_washing', 'laundry', 'dry_cleaning'],
+  pest_control: ['lawn_care_service', 'landscaper', 'house_cleaning'],
+  pool_service: ['landscaper', 'pressure_washing', 'general_contractor'],
+
+  // Food cluster
+  restaurant: ['cafe', 'bar', 'bakery', 'fast_food_restaurant', 'pizza_restaurant'],
+  cafe: ['coffee_shop', 'bakery', 'restaurant', 'tea_house'],
+  bar: ['restaurant', 'sports_bar', 'night_club', 'pub', 'wine_bar'],
+  bakery: ['cafe', 'donut_shop', 'dessert_shop', 'candy_store'],
+
+  // Professional services cluster
+  lawyer: ['accounting', 'real_estate_agency', 'insurance_agency', 'consultant'],
+  accounting: ['lawyer', 'insurance_agency', 'bank', 'consultant'],
+  real_estate_agency: ['lawyer', 'insurance_agency', 'moving_company'],
+  insurance_agency: ['accounting', 'lawyer', 'real_estate_agency', 'bank'],
+
+  // Pet cluster
+  veterinary_care: ['pet_care', 'pet_store', 'pet_boarding_service'],
+  pet_care: ['veterinary_care', 'pet_store', 'pet_boarding_service'],
+  pet_store: ['veterinary_care', 'pet_care', 'pet_boarding_service'],
+
+  // Lodging cluster
+  hotel: ['motel', 'bed_and_breakfast', 'resort_hotel', 'extended_stay_hotel'],
+  motel: ['hotel', 'rv_park', 'campground'],
+};
+
 export function searchBusinessTypes(query: string): BusinessTypeOption[] {
   if (!query.trim()) return BUSINESS_TYPES.slice(0, 15);
   const lower = query.toLowerCase();
   return BUSINESS_TYPES.filter(
     t => t.label.toLowerCase().includes(lower) || t.value.includes(lower) || t.category.toLowerCase().includes(lower)
   ).slice(0, 15);
+}
+
+/** Get suggested related business types based on what's already selected */
+export function getRelatedTypes(selectedValues: string[]): BusinessTypeOption[] {
+  const selectedSet = new Set(selectedValues.map(v => v.toLowerCase().replace(/ /g, '_').replace(/\//g, '_')));
+  const relatedValues = new Set<string>();
+
+  for (const selected of selectedValues) {
+    // Normalize to match keys in RELATED_TYPES
+    const key = selected.toLowerCase().replace(/ /g, '_').replace(/\//g, '_');
+    const related = RELATED_TYPES[key];
+    if (related) {
+      for (const r of related) {
+        if (!selectedSet.has(r)) relatedValues.add(r);
+      }
+    }
+    // Also suggest same-category items
+    const selectedType = BUSINESS_TYPES.find(t => t.label.toLowerCase() === selected.toLowerCase() || t.value === key);
+    if (selectedType) {
+      for (const t of BUSINESS_TYPES) {
+        if (t.category === selectedType.category && !selectedSet.has(t.value)) {
+          relatedValues.add(t.value);
+        }
+      }
+    }
+  }
+
+  return BUSINESS_TYPES.filter(t => relatedValues.has(t.value)).slice(0, 8);
 }
 
 export { BUSINESS_TYPES };
