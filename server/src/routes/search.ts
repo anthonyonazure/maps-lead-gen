@@ -3,6 +3,7 @@ import { geocodeLocation } from '../services/geocoding.js';
 import { splitIntoGrid } from '../services/grid-splitter.js';
 import { searchGooglePlaces } from '../providers/google-places.js';
 import { searchWithScraper } from '../providers/gosom-scraper.js';
+import { searchSerpApi } from '../providers/serpapi.js';
 import type { SearchParams, SearchResponse, SearchCircle } from '../providers/types.js';
 
 export const searchRouter = Router();
@@ -76,6 +77,27 @@ searchRouter.post('/', async (req: Request, res: Response) => {
           totalFound: results.length,
           deduplicated: 0,
           dataSource: 'scraper',
+          searchDurationMs: Date.now() - start,
+        },
+      };
+      res.json(response);
+      return;
+    }
+
+    if (params.dataSource === 'serpapi') {
+      if (!params.serpApiKey) {
+        res.status(400).json({ error: 'SerpAPI key is required' });
+        return;
+      }
+      const geo = await geocodeLocation(params.location, params.apiKey || params.serpApiKey);
+      const maxResults = params.targetResults || 60;
+      const results = await searchSerpApi(params.query, geo.location, params.serpApiKey, maxResults);
+      const response: SearchResponse = {
+        results,
+        meta: {
+          totalFound: results.length,
+          deduplicated: 0,
+          dataSource: 'serpapi',
           searchDurationMs: Date.now() - start,
         },
       };

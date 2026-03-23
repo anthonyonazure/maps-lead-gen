@@ -1,4 +1,4 @@
-import type { SearchResponse, CostEstimate } from './types';
+import type { SearchResponse, CostEstimate, LeadResult, ScoringConfig } from './types';
 
 export async function searchPlaces(params: {
   query: string;
@@ -7,8 +7,9 @@ export async function searchPlaces(params: {
   deepSearch: boolean;
   gridSize: number;
   targetResults?: number | null;
-  dataSource: 'google' | 'scraper';
+  dataSource: 'google' | 'scraper' | 'serpapi';
   apiKey?: string;
+  serpApiKey?: string;
 }): Promise<SearchResponse> {
   const res = await fetch('/api/search', {
     method: 'POST',
@@ -31,8 +32,32 @@ export async function getCostEstimate(deepSearch: boolean, gridSize: number): Pr
   return res.json();
 }
 
-export async function validateApiKey(apiKey: string): Promise<{ valid: boolean; error?: string }> {
-  const res = await fetch('/api/settings/validate-key', {
+export async function scoreResults(results: LeadResult[], config: ScoringConfig & { aiApiKey?: string }): Promise<LeadResult[]> {
+  const res = await fetch('/api/score', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ results, config }),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || 'Scoring failed');
+  }
+  const data = await res.json();
+  return data.results;
+}
+
+export async function validateKey(provider: string, apiKey: string): Promise<{ valid: boolean; error?: string }> {
+  const endpoints: Record<string, string> = {
+    google: '/api/settings/validate-key',
+    serpapi: '/api/settings/validate-serpapi-key',
+    openai: '/api/settings/validate-openai-key',
+    anthropic: '/api/settings/validate-anthropic-key',
+    gemini: '/api/settings/validate-gemini-key',
+  };
+  const url = endpoints[provider];
+  if (!url) return { valid: false, error: 'Unknown provider' };
+
+  const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ apiKey }),

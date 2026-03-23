@@ -5,8 +5,9 @@ export interface SearchParams {
   deepSearch?: boolean;
   gridSize?: number;
   targetResults?: number;
-  dataSource: 'google' | 'scraper';
+  dataSource: 'google' | 'scraper' | 'serpapi';
   apiKey?: string;
+  serpApiKey?: string;
 }
 
 export interface LeadResult {
@@ -22,7 +23,37 @@ export interface LeadResult {
   latitude: number;
   longitude: number;
   hoursListed: boolean;
+  score?: number;
+  scoreBreakdown?: Record<string, number>;
+  aiSummary?: string;
 }
+
+export interface ScoringConfig {
+  noWebsite: number;
+  noPhone: number;
+  lowReviews: number;
+  lowReviewThreshold: number;
+  lowRating: number;
+  lowRatingThreshold: number;
+  noHours: number;
+  fewCategories: number;
+  useAI: boolean;
+  aiProvider: 'openai' | 'anthropic' | 'gemini' | 'none';
+  aiApiKey?: string;
+}
+
+export const DEFAULT_SCORING_CONFIG: ScoringConfig = {
+  noWebsite: 30,
+  noPhone: 10,
+  lowReviews: 20,
+  lowReviewThreshold: 20,
+  lowRating: 15,
+  lowRatingThreshold: 3.5,
+  noHours: 5,
+  fewCategories: 5,
+  useAI: false,
+  aiProvider: 'none',
+};
 
 export interface GeoLocation {
   lat: number;
@@ -43,7 +74,7 @@ export interface SearchResponse {
   meta: {
     totalFound: number;
     deduplicated: number;
-    dataSource: 'google' | 'scraper';
+    dataSource: 'google' | 'scraper' | 'serpapi';
     apiCost?: number;
     searchDurationMs: number;
     gridCells?: number;

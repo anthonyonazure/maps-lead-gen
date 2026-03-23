@@ -11,6 +11,9 @@ export interface LeadResult {
   latitude: number;
   longitude: number;
   hoursListed: boolean;
+  score?: number;
+  scoreBreakdown?: Record<string, number>;
+  aiSummary?: string;
 }
 
 export interface SearchParams {
@@ -20,7 +23,7 @@ export interface SearchParams {
   deepSearch: boolean;
   gridSize: number;
   targetResults: number | null;
-  dataSource: 'google' | 'scraper';
+  dataSource: 'google' | 'scraper' | 'serpapi';
 }
 
 export interface SearchResponse {
@@ -42,6 +45,32 @@ export interface CostEstimate {
   gridCells: number;
   pagesPerCell: number;
 }
+
+export interface ScoringConfig {
+  noWebsite: number;
+  noPhone: number;
+  lowReviews: number;
+  lowReviewThreshold: number;
+  lowRating: number;
+  lowRatingThreshold: number;
+  noHours: number;
+  fewCategories: number;
+  useAI: boolean;
+  aiProvider: 'openai' | 'anthropic' | 'gemini' | 'none';
+}
+
+export const DEFAULT_SCORING_CONFIG: ScoringConfig = {
+  noWebsite: 30,
+  noPhone: 10,
+  lowReviews: 20,
+  lowReviewThreshold: 20,
+  lowRating: 15,
+  lowRatingThreshold: 3.5,
+  noHours: 5,
+  fewCategories: 5,
+  useAI: false,
+  aiProvider: 'none',
+};
 
 export interface Filters {
   hasWebsite: 'any' | 'yes' | 'no';

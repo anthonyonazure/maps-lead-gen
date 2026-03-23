@@ -5,10 +5,11 @@ import { FilterBar } from './components/FilterBar';
 import { SettingsPanel } from './components/SettingsPanel';
 import { CostTracker } from './components/CostTracker';
 import { SearchHistory, addToHistory, getCachedResults } from './components/SearchHistory';
+import { ScoringConfig } from './components/ScoringConfig';
 import { MapPin, Settings, Download } from 'lucide-react';
-import type { LeadResult, Filters, SearchResponse } from './lib/types';
-import { DEFAULT_FILTERS } from './lib/types';
-import { searchPlaces, exportCSV } from './lib/api';
+import type { LeadResult, Filters, SearchResponse, ScoringConfig as ScoringConfigType } from './lib/types';
+import { DEFAULT_FILTERS, DEFAULT_SCORING_CONFIG } from './lib/types';
+import { searchPlaces, scoreResults, exportCSV } from './lib/api';
 
 type SortField = keyof LeadResult;
 type SortDir = 'asc' | 'desc';
@@ -27,6 +28,8 @@ export default function App() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(0);
   const pageSize = 25;
+  const [scoringConfig, setScoringConfig] = useState<ScoringConfigType>(DEFAULT_SCORING_CONFIG);
+  const [scoring, setScoring] = useState(false);
 
   const apiKey = localStorage.getItem('gmaps-api-key') || '';
 
@@ -37,7 +40,7 @@ export default function App() {
     deepSearch: boolean;
     gridSize: number;
     targetResults: number | null;
-    dataSource: 'google' | 'scraper';
+    dataSource: 'google' | 'scraper' | 'serpapi';
   }, preFilters?: Partial<Filters>) => {
     setLoading(true);
     setError(null);
@@ -57,9 +60,11 @@ export default function App() {
         return;
       }
 
+      const serpApiKey = localStorage.getItem('serpapi-key') || '';
       const response = await searchPlaces({
         ...params,
         apiKey: params.dataSource === 'google' ? apiKey : undefined,
+        serpApiKey: params.dataSource === 'serpapi' ? serpApiKey : undefined,
       });
       setResults(response.results);
       setMeta(response.meta);
@@ -111,6 +116,22 @@ export default function App() {
 
     return filtered;
   }, [results, filters, sortField, sortDir]);
+
+  const handleScore = async () => {
+    setScoring(true);
+    try {
+      const aiApiKey = scoringConfig.aiProvider !== 'none'
+        ? localStorage.getItem(`${scoringConfig.aiProvider === 'anthropic' ? 'anthropic' : scoringConfig.aiProvider === 'openai' ? 'openai' : 'gemini'}-key`) || ''
+        : undefined;
+
+      const scored = await scoreResults(results, { ...scoringConfig, aiApiKey });
+      setResults(scored);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setScoring(false);
+    }
+  };
 
   const handleSort = (field: SortField) => {
     if (field === sortField) {
@@ -190,6 +211,14 @@ export default function App() {
                 </button>
               </div>
             </div>
+
+            <ScoringConfig
+              config={scoringConfig}
+              onChange={setScoringConfig}
+              onScore={handleScore}
+              scoring={scoring}
+              hasResults={results.length > 0}
+            />
 
             <FilterBar filters={filters} onChange={(f) => { setFilters(f); setPage(0); }} />
             <ResultsTable

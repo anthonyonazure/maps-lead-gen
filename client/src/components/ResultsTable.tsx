@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ArrowUpDown, ArrowUp, ArrowDown, ExternalLink, Globe, Phone, ChevronDown, ChevronRight, AlertTriangle, Star } from 'lucide-react';
+import { ScoreBadge } from './ScoreBadge';
 import type { LeadResult } from '../lib/types';
 
 type SortField = keyof LeadResult;
@@ -62,6 +63,7 @@ export function ResultsTable({ results, sortField, sortDir, onSort, selectedIds,
               <SortHeader field="website" label="Website" current={sortField} dir={sortDir} onSort={onSort} />
               <SortHeader field="rating" label="Rating" current={sortField} dir={sortDir} onSort={onSort} />
               <SortHeader field="reviewCount" label="Reviews" current={sortField} dir={sortDir} onSort={onSort} />
+              <SortHeader field="score" label="Score" current={sortField} dir={sortDir} onSort={onSort} />
               <th className="text-left px-3 py-3 font-medium text-slate-600">Categories</th>
               <th className="px-3 py-3 font-medium text-slate-600 w-10"></th>
             </tr>
@@ -131,6 +133,9 @@ export function ResultsTable({ results, sortField, sortDir, onSort, selectedIds,
                   <td className="px-3 py-2.5 text-center font-mono text-slate-700">
                     {r.reviewCount}
                   </td>
+                  <td className="px-3 py-2.5 text-center">
+                    {r.score !== undefined ? <ScoreBadge score={r.score} /> : <span className="text-slate-300">--</span>}
+                  </td>
                   <td className="px-3 py-2.5">
                     <div className="flex flex-wrap gap-1">
                       {r.categories.slice(0, 3).map(c => (
@@ -154,7 +159,7 @@ export function ResultsTable({ results, sortField, sortDir, onSort, selectedIds,
                 </tr>
                 {expandedId === r.placeId && (
                   <tr key={`${r.placeId}-detail`} className="bg-slate-50/80">
-                    <td colSpan={10} className="px-6 py-4">
+                    <td colSpan={11} className="px-6 py-4">
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                         <div>
                           <p className="text-xs font-medium text-slate-500 mb-1">Full Address</p>
@@ -199,6 +204,24 @@ export function ResultsTable({ results, sortField, sortDir, onSort, selectedIds,
                           <p className="text-xs font-medium text-slate-500 mb-1">Place ID</p>
                           <p className="text-slate-500 font-mono text-xs truncate">{r.placeId}</p>
                         </div>
+                        {r.aiSummary && (
+                          <div className="md:col-span-3">
+                            <p className="text-xs font-medium text-slate-500 mb-1">AI Assessment</p>
+                            <p className="text-slate-700 text-sm italic">{r.aiSummary}</p>
+                          </div>
+                        )}
+                        {r.scoreBreakdown && Object.keys(r.scoreBreakdown).length > 0 && (
+                          <div className="md:col-span-3">
+                            <p className="text-xs font-medium text-slate-500 mb-1">Score Breakdown</p>
+                            <div className="flex flex-wrap gap-1">
+                              {Object.entries(r.scoreBreakdown).map(([key, val]) => (
+                                <span key={key} className="px-1.5 py-0.5 bg-purple-50 text-purple-700 text-xs rounded border border-purple-200">
+                                  {key.replace(/([A-Z])/g, ' $1').trim()}: +{val}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </td>
                   </tr>
