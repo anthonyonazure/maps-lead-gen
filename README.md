@@ -19,7 +19,59 @@ Find, score, and manage business leads from Google Maps. Search by type and loca
 
 ---
 
-## Setup (Mac)
+## Install For End Users
+
+The goal is to distribute this as a normal desktop app so users do not need Node.js, Git, or the command line.
+
+### Windows Installer
+
+1. Go to the repo's **Releases** page
+2. Download the latest `Maps Lead Gen-Setup-...exe`
+3. Double-click the installer
+4. Launch **Maps Lead Gen** from the desktop or Start menu
+5. Open **Settings** in the app and paste your API keys
+
+The installer bundles the frontend and local backend together, so the user only needs to install the app and configure their keys.
+
+### First Launch
+
+The app still needs service credentials for the features you want to use:
+
+- **Google Places API key** for primary search
+- **SerpAPI key** if you want that search source
+- **Hunter.io key** for email enrichment
+- **OpenAI / Claude / Gemini key** for AI scoring
+
+Only the Google Places API key is required for the core workflow.
+
+---
+
+## Build Installer (Maintainer)
+
+### Local Windows Build
+
+```bash
+npm ci
+npm run electron:build:win
+```
+
+The generated installer will be written to `dist-electron/`.
+
+### GitHub Actions Release Build
+
+This repo includes a workflow at `.github/workflows/build-desktop-installer.yml`.
+
+- Run it manually from the **Actions** tab, or
+- Push a tag like `v1.0.0`
+
+When the workflow runs, it builds the Windows installer and:
+
+- uploads it as a workflow artifact
+- attaches it to the GitHub Release when triggered by a version tag
+
+---
+
+## Developer Setup (Mac)
 
 No technical experience needed.
 
@@ -60,7 +112,7 @@ Open **http://localhost:5173**, click the **gear icon**, paste your API key, cli
 
 ---
 
-## Setup (Windows)
+## Developer Setup (Windows)
 
 ### Step 1: Install Node.js
 

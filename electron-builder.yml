@@ -1,0 +1,37 @@
+appId: com.mapsleadgen.app
+productName: Maps Lead Gen
+directories:
+  output: dist-electron
+artifactName: ${productName}-Setup-${version}-${arch}.${ext}
+npmRebuild: false
+files:
+  - electron/main.cjs
+  - "!client/**"
+  - "!server/**"
+  - "!scripts/**"
+extraResources:
+  - from: client/dist
+    to: client-dist
+  - from: server/dist
+    to: server-dist
+win:
+  target: nsis
+nsis:
+  oneClick: true
+  perMachine: false
+  allowToChangeInstallationDirectory: false
+  deleteAppDataOnUninstall: false
+  shortcutName: Maps Lead Gen
+  createDesktopShortcut: always
+  createStartMenuShortcut: true
+mac:
+  target: dmg
+  category: public.app-category.business
+dmg:
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications

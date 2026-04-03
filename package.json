@@ -1,13 +1,31 @@
 {
   "name": "maps-lead-gen",
+  "version": "1.0.0",
   "private": true,
-  "type": "module",
-  "workspaces": ["server", "client"],
+  "description": "Desktop lead generation app for finding, scoring, and exporting Google Maps business leads.",
+  "author": "Anthony Clendenen",
+  "license": "MIT",
+  "main": "electron/main.cjs",
+  "workspaces": [
+    "server",
+    "client"
+  ],
   "scripts": {
     "dev": "concurrently -n server,client -c blue,green \"npm run dev -w server\" \"npm run dev -w client\"",
-    "build": "npm run build -w server && npm run build -w client"
+    "build": "npm run build -w server && npm run build -w client",
+    "electron:dev": "npm run build && electron .",
+    "electron:build": "npm run build && electron-builder --publish never",
+    "electron:build:win": "npm run build && electron-builder --win --publish never",
+    "electron:build:mac": "npm run build && electron-builder --mac --publish never",
+    "dist:win": "npm run electron:build:win"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0"
   },
   "devDependencies": {
-    "concurrently": "^9.1.0"
+    "concurrently": "^9.1.0",
+    "electron": "^34.5.8",
+    "electron-builder": "^26.0.0"
   }
 }
