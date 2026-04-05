@@ -9,7 +9,8 @@ import { enrichRouter } from './routes/enrich.js';
 
 export function startServer(staticDir?: string): Promise<{ server: ReturnType<typeof app.listen>; port: number }> {
   const app = express();
-  const PORT = Number(process.env.PORT || 3001);
+  const configuredPort = process.env.PORT ? Number(process.env.PORT) : undefined;
+  const preferredPort = configuredPort ?? (staticDir ? 0 : 3001);
 
   app.use(cors());
   app.use(express.json({ limit: '10mb' }));
@@ -31,16 +32,22 @@ export function startServer(staticDir?: string): Promise<{ server: ReturnType<ty
 
   // Client-side routing fallback (after API routes)
   if (staticDir) {
-    app.get('*', (_req, res) => {
+    // Express 5 rejects the legacy "*" route syntax, so use a final catch-all
+    // middleware for client-side routing after all API and static handlers.
+    app.use((_req, res) => {
       res.sendFile(path.join(staticDir, 'index.html'));
     });
   }
 
-  return new Promise((resolve) => {
-    const server = app.listen(PORT, '127.0.0.1', () => {
-      console.log(`Server running on http://127.0.0.1:${PORT}`);
-      resolve({ server, port: PORT });
+  return new Promise((resolve, reject) => {
+    const server = app.listen(preferredPort, '127.0.0.1', () => {
+      const address = server.address();
+      const port = typeof address === 'object' && address ? address.port : preferredPort;
+      console.log(`Server running on http://127.0.0.1:${port}`);
+      resolve({ server, port });
     });
+
+    server.on('error', reject);
   });
 }
 

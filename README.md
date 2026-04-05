@@ -62,7 +62,7 @@ The generated installer will be written to `dist-electron/`.
 This repo includes a workflow at `.github/workflows/build-desktop-installer.yml`.
 
 - Run it manually from the **Actions** tab, or
-- Push a tag like `v1.0.0`
+- Push a tag like `v1.0.1`
 
 When the workflow runs, it builds the Windows installer and:
 
