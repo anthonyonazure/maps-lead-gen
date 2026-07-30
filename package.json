@@ -11,6 +11,11 @@
     "client"
   ],
   "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "bun test",
+    "mutation": "stryker run",
+    "check": "bun run typecheck && bun run lint",
     "dev": "concurrently -n server,client -c blue,green \"npm run dev -w server\" \"npm run dev -w client\"",
     "build": "npm run build -w server && npm run bundle:server && npm run build -w client",
     "bundle:server": "node scripts/bundle-server.mjs",
@@ -25,8 +30,12 @@
     "express": "^5.1.0"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@stryker-mutator/core": "^9.6.1",
     "concurrently": "^9.1.0",
     "electron": "^34.5.8",
-    "electron-builder": "^26.0.0"
+    "electron-builder": "^26.0.0",
+    "eslint": "^10.8.0",
+    "typescript-eslint": "^8.65.0"
   }
 }
