@@ -1,5 +1,5 @@
 import { Sliders, Sparkles, Zap } from 'lucide-react';
-import type { ScoringConfig as ScoringConfigType } from '../lib/types';
+import type { AIProvider, ScoringConfig as ScoringConfigType } from '../lib/types';
 
 interface ScoringConfigProps {
   config: ScoringConfigType;
@@ -85,7 +85,7 @@ export function ScoringConfig({ config, onChange, onScore, scoring, hasResults }
         <div className="flex items-center gap-3 flex-wrap">
           <select
             value={config.aiProvider}
-            onChange={e => onChange({ ...config, aiProvider: e.target.value as any, useAI: e.target.value !== 'none' })}
+            onChange={e => onChange({ ...config, aiProvider: e.target.value as AIProvider, useAI: e.target.value !== 'none' })}
             className="px-2 py-1.5 border border-slate-300 rounded-lg text-sm"
           >
             {AI_PROVIDERS.map(p => (

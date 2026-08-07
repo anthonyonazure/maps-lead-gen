@@ -47,7 +47,7 @@ async function searchSingleArea(
   let pageToken: string | undefined;
 
   for (let page = 0; page < 3; page++) {
-    const body: Record<string, any> = {
+    const body: Record<string, unknown> = {
       textQuery: query,
       locationBias: {
         circle: {

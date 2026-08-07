@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { X, MapPin, ChevronRight } from 'lucide-react';
 import { US_STATES, STATE_CITIES } from '../lib/us-cities';
 
@@ -16,17 +16,16 @@ interface Suggestion {
 
 export function LocationInput({ values, onChange }: LocationInputProps) {
   const [input, setInput] = useState('');
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [open, setOpen] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (!input.trim()) {
-      setSuggestions([]);
-      return;
-    }
+  // Suggestions are derived from `input`, not synchronised with anything
+  // external, so they are computed during render. Storing them in state and
+  // filling it from an effect meant every keystroke rendered twice.
+  const suggestions = useMemo<Suggestion[]>(() => {
+    if (!input.trim()) return [];
     const lower = input.toLowerCase();
     const matches: Suggestion[] = [];
 
@@ -38,8 +37,7 @@ export function LocationInput({ values, onChange }: LocationInputProps) {
       }
     }
 
-    setSuggestions(matches.slice(0, 12));
-    setHighlightIndex(-1);
+    return matches.slice(0, 12);
   }, [input]);
 
   useEffect(() => {
@@ -116,7 +114,8 @@ export function LocationInput({ values, onChange }: LocationInputProps) {
     } else if (e.key === 'Escape') {
       setOpen(false);
     } else if (e.key === 'Backspace' && !input && values.length > 0) {
-      removeValue(values[values.length - 1]);
+      const last = values[values.length - 1];
+      if (last !== undefined) removeValue(last);
     }
   }
 
@@ -159,7 +158,7 @@ export function LocationInput({ values, onChange }: LocationInputProps) {
           ref={inputRef}
           type="text"
           value={input}
-          onChange={e => { setInput(e.target.value); setOpen(true); }}
+          onChange={e => { setInput(e.target.value); setHighlightIndex(-1); setOpen(true); }}
           onFocus={() => setOpen(true)}
           onKeyDown={handleKeyDown}
           placeholder={values.length === 0 ? 'Type a state, city, or zip...' : 'Add more...'}

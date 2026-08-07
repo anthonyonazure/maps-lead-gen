@@ -9,7 +9,6 @@ interface BusinessTypeInputProps {
 
 export function BusinessTypeInput({ values, onChange }: BusinessTypeInputProps) {
   const [input, setInput] = useState('');
-  const [suggestions, setSuggestions] = useState<BusinessTypeOption[]>([]);
   const [open, setOpen] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -17,16 +16,14 @@ export function BusinessTypeInput({ values, onChange }: BusinessTypeInputProps) 
 
   const related = getRelatedTypes(values);
 
-  useEffect(() => {
-    if (input.trim()) {
-      setSuggestions(searchBusinessTypes(input));
-    } else if (values.length > 0 && related.length > 0) {
-      setSuggestions(related);
-    } else {
-      setSuggestions(searchBusinessTypes(''));
-    }
-    setHighlightIndex(-1);
-  }, [input, values.length]);
+  // Suggestions are a pure function of the input and the values already
+  // chosen, so they are computed during render rather than pushed into state
+  // by an effect - which also drops the stale-`related` dependency warning.
+  const suggestions: BusinessTypeOption[] = input.trim()
+    ? searchBusinessTypes(input)
+    : values.length > 0 && related.length > 0
+      ? related
+      : searchBusinessTypes('');
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -69,7 +66,8 @@ export function BusinessTypeInput({ values, onChange }: BusinessTypeInputProps) 
     } else if (e.key === 'Escape') {
       setOpen(false);
     } else if (e.key === 'Backspace' && !input && values.length > 0) {
-      removeValue(values[values.length - 1]);
+      const last = values[values.length - 1];
+      if (last !== undefined) removeValue(last);
     }
   }
 
@@ -91,7 +89,7 @@ export function BusinessTypeInput({ values, onChange }: BusinessTypeInputProps) 
           ref={inputRef}
           type="text"
           value={input}
-          onChange={e => { setInput(e.target.value); setOpen(true); }}
+          onChange={e => { setInput(e.target.value); setHighlightIndex(-1); setOpen(true); }}
           onFocus={() => setOpen(true)}
           onKeyDown={handleKeyDown}
           placeholder={values.length === 0 ? 'e.g., chiropractor, dentist...' : 'Add more...'}

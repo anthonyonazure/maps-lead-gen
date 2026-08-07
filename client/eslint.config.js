@@ -18,6 +18,10 @@ export default defineConfig([
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,
+      // There is a tsconfig.json both here and at the repo root, so the parser
+      // cannot guess which one owns these files and refuses to parse at all
+      // until it is told.
+      parserOptions: { tsconfigRootDir: import.meta.dirname },
     },
   },
 ])

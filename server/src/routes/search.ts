@@ -5,6 +5,7 @@ import { searchGooglePlaces } from '../providers/google-places.js';
 import { searchWithScraper } from '../providers/gosom-scraper.js';
 import { searchSerpApi } from '../providers/serpapi.js';
 import type { SearchParams, SearchResponse, SearchCircle, LeadResult } from '../providers/types.js';
+import { errorMessage } from '../services/unknown.js';
 
 export const searchRouter = Router();
 
@@ -34,7 +35,8 @@ function parseLocations(location: string): string[] {
 }
 
 // POST /api/search/estimate
-searchRouter.post('/estimate', async (req: Request, res: Response) => {
+// Not async: this handler is pure arithmetic and never awaits anything.
+searchRouter.post('/estimate', (req: Request, res: Response) => {
   try {
     const { targetResults, deepSearch, gridSize, location } = req.body as Partial<SearchParams>;
     const locationCount = location ? parseLocations(location).length : 1;
@@ -62,8 +64,8 @@ searchRouter.post('/estimate', async (req: Request, res: Response) => {
       pagesPerCell: 3,
       estimatedResults: Math.round(totalCells * RESULTS_PER_CELL * 0.7),
     });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch (err) {
+    res.status(500).json({ error: errorMessage(err) });
   }
 });
 
@@ -88,10 +90,13 @@ searchRouter.post('/', async (req: Request, res: Response) => {
         allResults.push(...results);
       }
       const deduped = dedupeResults(allResults);
-      res.json({
+      // Annotate rather than assert: res.json() takes anything, so `as
+      // SearchResponse` checked nothing. A typed const actually checks it.
+      const payload: SearchResponse = {
         results: deduped,
         meta: { totalFound: deduped.length, deduplicated: allResults.length - deduped.length, dataSource: 'scraper', searchDurationMs: Date.now() - start },
-      } as SearchResponse);
+      };
+      res.json(payload);
       return;
     }
 
@@ -105,10 +110,11 @@ searchRouter.post('/', async (req: Request, res: Response) => {
         allResults.push(...results);
       }
       const deduped = dedupeResults(allResults);
-      res.json({
+      const payload: SearchResponse = {
         results: deduped,
         meta: { totalFound: deduped.length, deduplicated: allResults.length - deduped.length, dataSource: 'serpapi', searchDurationMs: Date.now() - start },
-      } as SearchResponse);
+      };
+      res.json(payload);
       return;
     }
 
@@ -152,7 +158,7 @@ searchRouter.post('/', async (req: Request, res: Response) => {
     const requests = totalCircles * 3;
     const apiCost = Math.round(requests * COST_PER_REQUEST * 1000) / 1000;
 
-    res.json({
+    const payload: SearchResponse = {
       results: deduped,
       meta: {
         totalFound: deduped.length,
@@ -162,8 +168,9 @@ searchRouter.post('/', async (req: Request, res: Response) => {
         searchDurationMs: Date.now() - start,
         gridCells: totalCircles,
       },
-    } as SearchResponse);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    };
+    res.json(payload);
+  } catch (err) {
+    res.status(500).json({ error: errorMessage(err) });
   }
 });

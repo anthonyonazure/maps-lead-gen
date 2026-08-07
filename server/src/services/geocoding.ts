@@ -6,17 +6,29 @@ interface GeocodeResult {
   formattedAddress: string;
 }
 
+/** The slice of the Google Geocoding API response this module actually reads. */
+interface GeocodeApiResponse {
+  status?: string;
+  results?: {
+    formatted_address?: string;
+    geometry?: {
+      location?: GeoLocation;
+      viewport?: { northeast: GeoLocation; southwest: GeoLocation };
+    };
+  }[];
+}
+
 export async function geocodeLocation(location: string, apiKey: string): Promise<GeocodeResult> {
   const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(location)}&key=${apiKey}`;
   const res = await fetch(url);
-  const data = await res.json() as any;
+  const data = (await res.json()) as GeocodeApiResponse;
 
-  if (data.status !== 'OK' || !data.results?.length) {
-    throw new Error(`Geocoding failed for "${location}": ${data.status}`);
+  const result = data.results?.[0];
+  const geo = result?.geometry;
+  const point = geo?.location;
+  if (data.status !== 'OK' || !result || !geo || !point) {
+    throw new Error(`Geocoding failed for "${location}": ${data.status ?? 'no result'}`);
   }
-
-  const result = data.results[0];
-  const geo = result.geometry;
 
   // Use viewport as bounds (covers the logical area), fallback to a default box
   const bounds: BoundingBox = geo.viewport
@@ -25,13 +37,13 @@ export async function geocodeLocation(location: string, apiKey: string): Promise
         southwest: { lat: geo.viewport.southwest.lat, lng: geo.viewport.southwest.lng },
       }
     : {
-        northeast: { lat: geo.location.lat + 0.05, lng: geo.location.lng + 0.05 },
-        southwest: { lat: geo.location.lat - 0.05, lng: geo.location.lng - 0.05 },
+        northeast: { lat: point.lat + 0.05, lng: point.lng + 0.05 },
+        southwest: { lat: point.lat - 0.05, lng: point.lng - 0.05 },
       };
 
   return {
-    location: { lat: geo.location.lat, lng: geo.location.lng },
+    location: { lat: point.lat, lng: point.lng },
     bounds,
-    formattedAddress: result.formatted_address,
+    formattedAddress: result.formatted_address ?? location,
   };
 }
