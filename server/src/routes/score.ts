@@ -1,7 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { scoreLeads } from '../services/scoring.js';
 import { aiScoreLeads } from '../providers/ai-scoring.js';
-import type { LeadResult, ScoringConfig, DEFAULT_SCORING_CONFIG } from '../providers/types.js';
+import type { LeadResult, ScoringConfig } from '../providers/types.js';
+import { errorMessage } from '../services/unknown.js';
 
 export const scoreRouter = Router();
 
@@ -24,7 +25,7 @@ scoreRouter.post('/', async (req: Request, res: Response) => {
     }
 
     res.json({ results: scored });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch (err) {
+    res.status(500).json({ error: errorMessage(err) });
   }
 });

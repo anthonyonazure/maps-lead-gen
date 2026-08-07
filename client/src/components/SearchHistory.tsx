@@ -1,51 +1,9 @@
 import { History, X } from 'lucide-react';
 
-import type { LeadResult } from '../lib/types';
-
-interface SearchEntry {
-  query: string;
-  location: string;
-  timestamp: number;
-  resultCount: number;
-}
+import { getHistory, HISTORY_STORAGE_KEY } from '../lib/search-history';
 
 interface SearchHistoryProps {
   onRerun: (query: string, location: string) => void;
-}
-
-const STORAGE_KEY = 'search-history';
-const CACHE_KEY = 'search-cache';
-const MAX_ENTRIES = 100;
-
-function cacheKey(query: string, location: string) {
-  return `${query.toLowerCase().trim()}|${location.toLowerCase().trim()}`;
-}
-
-export function getHistory(): SearchEntry[] {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-  } catch { return []; }
-}
-
-export function addToHistory(query: string, location: string, resultCount: number, results: LeadResult[]) {
-  const history = getHistory().filter(e => !(e.query === query && e.location === location));
-  history.unshift({ query, location, timestamp: Date.now(), resultCount });
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(history.slice(0, MAX_ENTRIES)));
-
-  // Cache results
-  try {
-    const cache: Record<string, LeadResult[]> = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
-    cache[cacheKey(query, location)] = results;
-    // No limit — keep all cached searches
-    localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
-  } catch { /* storage full, skip caching */ }
-}
-
-export function getCachedResults(query: string, location: string): LeadResult[] | null {
-  try {
-    const cache = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
-    return cache[cacheKey(query, location)] || null;
-  } catch { return null; }
 }
 
 export function SearchHistory({ onRerun }: SearchHistoryProps) {
@@ -53,7 +11,7 @@ export function SearchHistory({ onRerun }: SearchHistoryProps) {
   if (history.length === 0) return null;
 
   const clearHistory = () => {
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(HISTORY_STORAGE_KEY);
     window.dispatchEvent(new Event('storage'));
   };
 

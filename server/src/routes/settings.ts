@@ -1,7 +1,17 @@
 import { Router, Request, Response } from 'express';
 import { checkScraperStatus } from '../providers/gosom-scraper.js';
+import { errorMessage, readStringField } from '../services/unknown.js';
 
 export const settingsRouter = Router();
+
+/** The slices of the validation responses these handlers actually read. */
+interface GeocodeProbeResponse {
+  status?: string;
+  error_message?: string;
+}
+interface HunterAccountResponse {
+  data?: { requests?: { searches?: { available?: number } } };
+}
 
 // GET /api/settings/scraper-status
 settingsRouter.get('/scraper-status', async (_req: Request, res: Response) => {
@@ -11,39 +21,39 @@ settingsRouter.get('/scraper-status', async (_req: Request, res: Response) => {
 
 // POST /api/settings/validate-key — test Google API key
 settingsRouter.post('/validate-key', async (req: Request, res: Response) => {
-  const { apiKey } = req.body;
+  const apiKey = readStringField(req.body, 'apiKey');
   if (!apiKey) { res.status(400).json({ valid: false, error: 'No API key provided' }); return; }
 
   try {
     const testRes = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=test&key=${apiKey}`);
-    const data = await testRes.json() as any;
+    const data = (await testRes.json()) as GeocodeProbeResponse;
     if (data.status === 'REQUEST_DENIED') {
-      res.json({ valid: false, error: data.error_message || 'Invalid or restricted key' });
+      res.json({ valid: false, error: data.error_message ?? 'Invalid or restricted key' });
       return;
     }
     res.json({ valid: true });
-  } catch (err: any) {
-    res.json({ valid: false, error: err.message });
+  } catch (err) {
+    res.json({ valid: false, error: errorMessage(err) });
   }
 });
 
 // POST /api/settings/validate-serpapi-key
 settingsRouter.post('/validate-serpapi-key', async (req: Request, res: Response) => {
-  const { apiKey } = req.body;
+  const apiKey = readStringField(req.body, 'apiKey');
   if (!apiKey) { res.status(400).json({ valid: false, error: 'No key provided' }); return; }
 
   try {
     const testRes = await fetch(`https://serpapi.com/account?api_key=${apiKey}`);
     if (!testRes.ok) { res.json({ valid: false, error: 'Invalid SerpAPI key' }); return; }
     res.json({ valid: true });
-  } catch (err: any) {
-    res.json({ valid: false, error: err.message });
+  } catch (err) {
+    res.json({ valid: false, error: errorMessage(err) });
   }
 });
 
 // POST /api/settings/validate-openai-key
 settingsRouter.post('/validate-openai-key', async (req: Request, res: Response) => {
-  const { apiKey } = req.body;
+  const apiKey = readStringField(req.body, 'apiKey');
   if (!apiKey) { res.status(400).json({ valid: false, error: 'No key provided' }); return; }
 
   try {
@@ -51,14 +61,14 @@ settingsRouter.post('/validate-openai-key', async (req: Request, res: Response) 
       headers: { 'Authorization': `Bearer ${apiKey}` },
     });
     res.json({ valid: testRes.ok, error: testRes.ok ? undefined : 'Invalid OpenAI key' });
-  } catch (err: any) {
-    res.json({ valid: false, error: err.message });
+  } catch (err) {
+    res.json({ valid: false, error: errorMessage(err) });
   }
 });
 
 // POST /api/settings/validate-anthropic-key
 settingsRouter.post('/validate-anthropic-key', async (req: Request, res: Response) => {
-  const { apiKey } = req.body;
+  const apiKey = readStringField(req.body, 'apiKey');
   if (!apiKey) { res.status(400).json({ valid: false, error: 'No key provided' }); return; }
 
   try {
@@ -69,35 +79,35 @@ settingsRouter.post('/validate-anthropic-key', async (req: Request, res: Respons
       body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 1, messages: [{ role: 'user', content: 'hi' }] }),
     });
     res.json({ valid: testRes.ok || testRes.status === 400, error: testRes.status === 401 ? 'Invalid Anthropic key' : undefined });
-  } catch (err: any) {
-    res.json({ valid: false, error: err.message });
+  } catch (err) {
+    res.json({ valid: false, error: errorMessage(err) });
   }
 });
 
 // POST /api/settings/validate-hunter-key
 settingsRouter.post('/validate-hunter-key', async (req: Request, res: Response) => {
-  const { apiKey } = req.body;
+  const apiKey = readStringField(req.body, 'apiKey');
   if (!apiKey) { res.status(400).json({ valid: false, error: 'No key provided' }); return; }
 
   try {
     const testRes = await fetch(`https://api.hunter.io/v2/account?api_key=${apiKey}`);
     if (!testRes.ok) { res.json({ valid: false, error: 'Invalid Hunter.io key' }); return; }
-    const data = await testRes.json() as any;
-    res.json({ valid: true, remaining: data?.data?.requests?.searches?.available });
-  } catch (err: any) {
-    res.json({ valid: false, error: err.message });
+    const data = (await testRes.json()) as HunterAccountResponse;
+    res.json({ valid: true, remaining: data.data?.requests?.searches?.available });
+  } catch (err) {
+    res.json({ valid: false, error: errorMessage(err) });
   }
 });
 
 // POST /api/settings/validate-gemini-key
 settingsRouter.post('/validate-gemini-key', async (req: Request, res: Response) => {
-  const { apiKey } = req.body;
+  const apiKey = readStringField(req.body, 'apiKey');
   if (!apiKey) { res.status(400).json({ valid: false, error: 'No key provided' }); return; }
 
   try {
     const testRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
     res.json({ valid: testRes.ok, error: testRes.ok ? undefined : 'Invalid Gemini key' });
-  } catch (err: any) {
-    res.json({ valid: false, error: err.message });
+  } catch (err) {
+    res.json({ valid: false, error: errorMessage(err) });
   }
 });

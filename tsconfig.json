@@ -6,6 +6,18 @@
     "types": [
       "bun"
     ],
+    // "include" pulls in client/src/**/*.tsx, which is a React app. Without
+    // these three the root typecheck reports every JSX element as TS17004 and
+    // every ".tsx" import as TS5097 - 465 errors that are all one missing
+    // setting, not 465 defects. client/tsconfig.app.json already sets them; the
+    // root config has to agree or it cannot check that code at all.
+    "jsx": "react-jsx",
+    "allowImportingTsExtensions": true,
+    "lib": [
+      "ESNext",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "noFallthroughCasesInSwitch": true,

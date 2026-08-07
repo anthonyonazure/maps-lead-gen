@@ -1,4 +1,16 @@
 import type { LeadResult, ScoringConfig } from './types.js';
+import { asString, errorMessage } from '../services/unknown.js';
+
+/** The slices of each provider's chat response this module actually reads. */
+interface OpenAIResponse {
+  choices?: { message?: { content?: string } }[];
+}
+interface AnthropicResponse {
+  content?: { text?: string }[];
+}
+interface GeminiResponse {
+  candidates?: { content?: { parts?: { text?: string }[] } }[];
+}
 
 const BATCH_SIZE = 20;
 
@@ -35,16 +47,27 @@ Leads to score:
 ${JSON.stringify(leadsJson)}`;
 }
 
+/** One entry of the model's JSON reply, before we trust any of it. */
+interface RawScoredLead {
+  id?: unknown;
+  placeId?: unknown;
+  adj?: unknown;
+  adjustment?: unknown;
+  summary?: unknown;
+}
+
 function parseAIResponse(text: string): AIScoredLead[] {
   // Strip markdown code fences if present
   const cleaned = text.replace(/```json?\s*/g, '').replace(/```/g, '').trim();
   try {
-    const parsed = JSON.parse(cleaned);
+    // A language model's reply is untrusted input, so parse it as unknown and
+    // coerce each field rather than asserting a shape it may not have.
+    const parsed: unknown = JSON.parse(cleaned);
     if (!Array.isArray(parsed)) return [];
-    return parsed.map((item: any) => ({
-      placeId: item.id || item.placeId || '',
-      aiAdjustment: Math.max(-20, Math.min(20, Number(item.adj || item.adjustment || 0))),
-      summary: String(item.summary || ''),
+    return (parsed as RawScoredLead[]).map(item => ({
+      placeId: asString(item.id) || asString(item.placeId),
+      aiAdjustment: Math.max(-20, Math.min(20, Number(item.adj ?? item.adjustment ?? 0) || 0)),
+      summary: asString(item.summary),
     }));
   } catch {
     return [];
@@ -62,8 +85,8 @@ async function callOpenAI(prompt: string, apiKey: string): Promise<string> {
     }),
   });
   if (!res.ok) throw new Error(`OpenAI error: ${res.status}`);
-  const data = await res.json() as any;
-  return data.choices?.[0]?.message?.content || '';
+  const data = (await res.json()) as OpenAIResponse;
+  return data.choices?.[0]?.message?.content ?? '';
 }
 
 async function callAnthropic(prompt: string, apiKey: string): Promise<string> {
@@ -81,8 +104,8 @@ async function callAnthropic(prompt: string, apiKey: string): Promise<string> {
     }),
   });
   if (!res.ok) throw new Error(`Anthropic error: ${res.status}`);
-  const data = await res.json() as any;
-  return data.content?.[0]?.text || '';
+  const data = (await res.json()) as AnthropicResponse;
+  return data.content?.[0]?.text ?? '';
 }
 
 async function callGemini(prompt: string, apiKey: string): Promise<string> {
@@ -95,8 +118,8 @@ async function callGemini(prompt: string, apiKey: string): Promise<string> {
     }),
   });
   if (!res.ok) throw new Error(`Gemini error: ${res.status}`);
-  const data = await res.json() as any;
-  return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  const data = (await res.json()) as GeminiResponse;
+  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
 }
 
 async function callProvider(prompt: string, provider: string, apiKey: string): Promise<string> {
@@ -129,19 +152,21 @@ export async function aiScoreLeads(
       for (const item of parsed) {
         aiMap.set(item.placeId, item);
       }
-    } catch (err: any) {
-      console.error(`AI scoring batch ${i} failed:`, err.message);
+    } catch (err) {
+      console.error(`AI scoring batch ${i} failed:`, errorMessage(err));
       // Continue with remaining batches
     }
   }
 
   // Apply AI adjustments
   for (let i = 0; i < scored.length; i++) {
-    const ai = aiMap.get(scored[i].placeId);
+    const lead = scored[i];
+    if (!lead) continue;
+    const ai = aiMap.get(lead.placeId);
     if (ai) {
-      const baseScore = scored[i].score ?? 0;
+      const baseScore = lead.score ?? 0;
       scored[i] = {
-        ...scored[i],
+        ...lead,
         score: Math.max(0, Math.min(100, baseScore + ai.aiAdjustment)),
         aiSummary: ai.summary,
       };

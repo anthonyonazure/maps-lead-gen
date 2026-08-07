@@ -9,7 +9,20 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
   {
-    languageOptions: { parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname } },
+    languageOptions: {
+      parserOptions: {
+        // scripts/bundle-server.mjs is a build script, and tsconfig.json's
+        // "include" only lists .ts/.tsx/.js - not .mjs. Without this the
+        // project service refuses to parse it at all, which reports as a lint
+        // error about a file that has nothing wrong with it. Only .mjs is
+        // listed: anything tsconfig.json already covers must NOT appear here,
+        // or the service rejects it for being in both places.
+        projectService: {
+          allowDefaultProject: ["*.mjs", "scripts/*.mjs"],
+        },
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
     rules: {
       "@typescript-eslint/no-floating-promises": "error",
       "@typescript-eslint/no-misused-promises": "error",

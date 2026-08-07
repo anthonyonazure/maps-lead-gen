@@ -4,15 +4,18 @@ import { ResultsTable } from './components/ResultsTable';
 import { FilterBar } from './components/FilterBar';
 import { SettingsPanel } from './components/SettingsPanel';
 import { CostTracker } from './components/CostTracker';
-import { SearchHistory, addToHistory, getCachedResults } from './components/SearchHistory';
+import { SearchHistory } from './components/SearchHistory';
+import { addToHistory, getCachedResults } from './lib/search-history';
 import { ScoringConfig } from './components/ScoringConfig';
 import { LeadPipeline } from './components/LeadPipeline';
-import { OutreachTemplates, loadTemplates } from './components/OutreachTemplates';
+import { OutreachTemplates } from './components/OutreachTemplates';
+import { loadTemplates } from './lib/outreach-templates';
 import { ExportDialog } from './components/ExportDialog';
 import { MapPin, Settings, Download, Globe, Mail, MessageSquare } from 'lucide-react';
 import type { LeadResult, Filters, SearchResponse, ScoringConfig as ScoringConfigType } from './lib/types';
 import { DEFAULT_FILTERS, DEFAULT_SCORING_CONFIG } from './lib/types';
 import { searchPlaces, scoreResults, enrichWebsites, enrichEmails } from './lib/api';
+import { errorMessage } from './lib/errors';
 
 type SortField = keyof LeadResult;
 type SortDir = 'asc' | 'desc';
@@ -79,8 +82,8 @@ export default function App() {
       if (response.meta.apiCost) {
         setSessionCost(c => c + response.meta.apiCost!);
       }
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(errorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -131,8 +134,8 @@ export default function App() {
         : undefined;
       const scored = await scoreResults(results, { ...scoringConfig, aiApiKey });
       setResults(scored);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(errorMessage(err));
     } finally {
       setScoring(false);
     }
@@ -143,8 +146,8 @@ export default function App() {
     try {
       const enriched = await enrichWebsites(results);
       setResults(enriched);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(errorMessage(err));
     } finally {
       setEnriching(null);
     }
@@ -157,8 +160,8 @@ export default function App() {
     try {
       const enriched = await enrichEmails(results, hunterKey);
       setResults(enriched);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(errorMessage(err));
     } finally {
       setEnriching(null);
     }

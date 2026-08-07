@@ -1,3 +1,6 @@
+export type LeadStatus = 'new' | 'contacted' | 'replied' | 'meeting' | 'won' | 'lost';
+export type AIProvider = 'openai' | 'anthropic' | 'gemini' | 'none';
+
 export interface LeadResult {
   placeId: string;
   name: string;
@@ -27,7 +30,7 @@ export interface LeadResult {
     hasBooking: boolean;
     techScore: number;
   };
-  leadStatus?: 'new' | 'contacted' | 'replied' | 'meeting' | 'won' | 'lost';
+  leadStatus?: LeadStatus;
   notes?: string;
 }
 
@@ -71,7 +74,7 @@ export interface ScoringConfig {
   noHours: number;
   fewCategories: number;
   useAI: boolean;
-  aiProvider: 'openai' | 'anthropic' | 'gemini' | 'none';
+  aiProvider: AIProvider;
 }
 
 export const DEFAULT_SCORING_CONFIG: ScoringConfig = {

@@ -64,11 +64,15 @@ async function downloadResults(jobId: string): Promise<LeadResult[]> {
   const lines = text.trim().split('\n');
   if (lines.length < 2) return [];
 
-  const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+  const headerLine = lines[0];
+  if (headerLine === undefined) return [];
+  const headers = headerLine.split(',').map(h => h.trim().toLowerCase());
   const results: LeadResult[] = [];
 
   for (let i = 1; i < lines.length; i++) {
-    const values = parseCSVLine(lines[i]);
+    const line = lines[i];
+    if (line === undefined) continue;
+    const values = parseCSVLine(line);
     const row: Record<string, string> = {};
     headers.forEach((h, idx) => { row[h] = values[idx] ?? ''; });
 

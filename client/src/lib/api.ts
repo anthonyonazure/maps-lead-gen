@@ -93,7 +93,7 @@ export async function enrichEmails(results: LeadResult[], hunterApiKey: string):
   return data.results;
 }
 
-export async function exportCSV(results: any[], columns?: string[]): Promise<void> {
+export async function exportCSV(results: LeadResult[], columns?: string[]): Promise<void> {
   const res = await fetch('/api/export', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

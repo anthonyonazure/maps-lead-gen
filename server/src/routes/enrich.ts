@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { batchCheckWebsites } from '../services/website-check.js';
 import { batchFindEmails } from '../services/email-finder.js';
 import type { LeadResult } from '../providers/types.js';
+import { errorMessage } from '../services/unknown.js';
 
 export const enrichRouter = Router();
 
@@ -18,8 +19,8 @@ enrichRouter.post('/websites', async (req: Request, res: Response) => {
     });
 
     res.json({ results: enriched });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch (err) {
+    res.status(500).json({ error: errorMessage(err) });
   }
 });
 
@@ -41,7 +42,7 @@ enrichRouter.post('/emails', async (req: Request, res: Response) => {
     });
 
     res.json({ results: enriched });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch (err) {
+    res.status(500).json({ error: errorMessage(err) });
   }
 });

@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { X, Save, Mail, Phone, Globe, MessageSquare } from 'lucide-react';
-import type { LeadResult } from '../lib/types';
+import type { LeadResult, LeadStatus } from '../lib/types';
+import type { OutreachTemplate } from '../lib/lead-pipeline';
+import { loadPipelineData, savePipelineData } from '../lib/lead-pipeline';
 
 const STATUSES = [
   { value: 'new', label: 'New', color: 'bg-slate-100 text-slate-700' },
@@ -16,34 +18,6 @@ interface LeadPipelineProps {
   onUpdate: (lead: LeadResult) => void;
   onClose: () => void;
   outreachTemplates: OutreachTemplate[];
-}
-
-export interface OutreachTemplate {
-  id: string;
-  name: string;
-  subject: string;
-  body: string;
-}
-
-const STORAGE_KEY = 'lead-pipeline';
-
-function loadPipelineData(): Record<string, { status: string; notes: string }> {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }
-  catch { return {}; }
-}
-
-function savePipelineData(data: Record<string, { status: string; notes: string }>) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-}
-
-export function getLeadStatus(placeId: string): string {
-  const data = loadPipelineData();
-  return data[placeId]?.status || 'new';
-}
-
-export function getLeadNotes(placeId: string): string {
-  const data = loadPipelineData();
-  return data[placeId]?.notes || '';
 }
 
 function fillTemplate(template: string, lead: LeadResult): string {
@@ -71,7 +45,7 @@ function fillTemplate(template: string, lead: LeadResult): string {
 
 export function LeadPipeline({ lead, onUpdate, onClose, outreachTemplates }: LeadPipelineProps) {
   const pipelineData = loadPipelineData();
-  const existing = pipelineData[lead.placeId] || { status: 'new', notes: '' };
+  const existing = pipelineData[lead.placeId] || { status: 'new' as LeadStatus, notes: '' };
   const [status, setStatus] = useState(existing.status);
   const [notes, setNotes] = useState(existing.notes);
   const [selectedTemplate, setSelectedTemplate] = useState('');
@@ -81,7 +55,7 @@ export function LeadPipeline({ lead, onUpdate, onClose, outreachTemplates }: Lea
     const data = loadPipelineData();
     data[lead.placeId] = { status, notes };
     savePipelineData(data);
-    onUpdate({ ...lead, leadStatus: status as any, notes });
+    onUpdate({ ...lead, leadStatus: status, notes });
   };
 
   const handleGenerateOutreach = () => {

@@ -6,6 +6,7 @@ import { exportRouter } from './routes/export.js';
 import { settingsRouter } from './routes/settings.js';
 import { scoreRouter } from './routes/score.js';
 import { enrichRouter } from './routes/enrich.js';
+import { errorMessage } from './services/unknown.js';
 
 export function startServer(staticDir?: string): Promise<{ server: ReturnType<typeof app.listen>; port: number }> {
   const app = express();
@@ -54,5 +55,10 @@ export function startServer(staticDir?: string): Promise<{ server: ReturnType<ty
 // Auto-start when run directly (not imported by Electron)
 const isDirectRun = !process.argv[1]?.includes('electron') && !process.env.ELECTRON_RUN_AS_NODE;
 if (isDirectRun) {
-  startServer();
+  // Top-level bootstrap: nothing can await this, so failures have to be logged
+  // here or they surface as an unhandled rejection and a silent dead server.
+  startServer().catch((err: unknown) => {
+    console.error('Failed to start server:', errorMessage(err));
+    process.exitCode = 1;
+  });
 }

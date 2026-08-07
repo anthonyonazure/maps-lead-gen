@@ -4,6 +4,13 @@ export interface EmailResult {
   source: string;
 }
 
+/** The slice of the Hunter.io domain-search response this module actually reads. */
+interface HunterDomainSearchResponse {
+  data?: {
+    emails?: { value?: string; confidence?: number }[];
+  };
+}
+
 /**
  * Try to find a contact email for a business using Hunter.io API.
  * Falls back to constructing common patterns from the domain.
@@ -39,26 +46,26 @@ export async function findEmail(
       throw new Error(`Hunter.io error: ${res.status}`);
     }
 
-    const data = await res.json() as any;
-    const emails = data?.data?.emails || [];
+    const data = (await res.json()) as HunterDomainSearchResponse;
+    const top = data.data?.emails?.[0];
 
-    if (emails.length > 0) {
+    if (top?.value) {
       return {
-        email: emails[0].value,
-        confidence: emails[0].confidence || 50,
+        email: top.value,
+        confidence: top.confidence ?? 50,
         source: 'hunter.io',
       };
     }
 
     // No results from Hunter — try common patterns
-    const patterns = ['info', 'contact', 'hello', 'admin', 'office'];
     return {
-      email: `${patterns[0]}@${domain}`,
+      email: `info@${domain}`,
       confidence: 15,
       source: 'pattern_guess',
     };
-  } catch (err: any) {
-    if (err.message.includes('Invalid Hunter.io')) throw err;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (message.includes('Invalid Hunter.io')) throw err;
     return { email: null, confidence: 0, source: 'error' };
   }
 }
